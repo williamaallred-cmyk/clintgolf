@@ -33,26 +33,18 @@
     th,td{padding:8px;border-bottom:1px solid #eef6ec;text-align:left}
     .edit-btn{background:#e9f3e9;color:#083018;border-radius:6px;padding:6px 8px;border:0;cursor:pointer}
     @media(max-width:900px){.layout{flex-direction:column}.right{width:auto}}
-    /* Make Round and Hole selector rows more compact */
-  #roundSelect, #holeSelect{
-    height:28px;
-    padding:2px 6px;
-    font-size:13px;
-  }
-  
-  /* Reduce spacing around their container rows */
-  #roundSelect, #holeSelect{
-    margin-top:2px;
-    margin-bottom:2px;
-  }
-
-</style>
+    
+    #round-select, #hole-select { height:36px; padding:2px 6px; font-size:14px; margin-bottom:10px; }
+    .player-input{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+    .player-input span{ width:140px; flex:0 0 140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .player-input select{ width:64px; padding:4px 6px; font-size:13px; }
+  </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 7v7c0 5 4 9 9 9s9-4 9-9V7l-9-5z" fill="#2d6b2f"/></svg>
-      <h1>Golf Tournament Scorekeeper — Production</h1>
+      <h1>Golf Tournament Scorekeeper</h1>
     </header>
 
     <nav class="nav">
@@ -64,29 +56,22 @@
 
     <section id="entry-page" class="card layout">
       <div class="left">
-        <h3>Enter scores — <span id="current-label">Round 1 • Hole 1</span></h3>
-
+        <h3>Enter scores — <span id="current-label">Loading...</span></h3>
         <label>Round</label>
         <select id="round-select"></select>
-
         <label>Hole</label>
         <select id="hole-select"></select>
-
         <div id="inputs" style="margin-top:12px"></div>
-
         <div class="controls">
           <button id="submit">Submit</button>
           <button id="undo" class="ghost">Undo</button>
-          
         </div>
-
         <div id="message" class="muted small" style="margin-top:8px"></div>
       </div>
-
       <aside class="right">
         <h3>Totals & Ranking</h3>
         <div id="totals" class="totals-list"></div>
-        <div style="margin-top:12px" class="muted small">Ranking: lowest total = 1st. Ties display as T1 for tied-first.</div>
+        <div style="margin-top:12px" class="muted small">Ranking: lowest total = 1st.</div>
       </aside>
     </section>
 
@@ -96,263 +81,235 @@
     </section>
   </div>
 
-  <!-- Firebase -->
+  <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
   <script>
-  /***** CONFIGURE THIS: paste your firebaseConfig object below *****/
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+    // Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBTW-gbxRXwdd7XY9zfyXJl1JG-g4gKe_k",
+      authDomain: "golf-scorer-8195d.firebaseapp.com",
+      projectId: "golf-scorer-8195d",
+      storageBucket: "golf-scorer-8195d.firebasestorage.app",
+      messagingSenderId: "265598990172",
+      appId: "1:265598990172:web:4b274cec22009e34c47399"
+    };
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBTW-gbxRXwdd7XY9zfyXJl1JG-g4gKe_k",
-  authDomain: "golf-scorer-8195d.firebaseapp.com",
-  projectId: "golf-scorer-8195d",
-  storageBucket: "golf-scorer-8195d.firebasestorage.app",
-  messagingSenderId: "265598990172",
-  appId: "1:265598990172:web:4b274cec22009e34c47399"
-};
+    // Initialize
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+    const PLAYERS = ['Brian','Jeff','Tucker','Clint'];
+    const COURSES = [
+      {round:1, name:'Glen Dornoch'},
+      {round:2, name:'Sea Trail Jones'},
+      {round:3, name:'Sea Trail Byrd'}
+    ];
+    const TOURNAMENT_DOC = 'golf_tourney_default_prod';
+    const HOLES_COL = db.collection('tournaments').doc(TOURNAMENT_DOC).collection('holes');
 
-  // Initialize Firebase
-//  firebase.initializeApp(FIREBASE_CONFIG);
-//  const db = firebase.firestore();
+    // State
+    let holesCache = {};
+    let lastAction = null;
 
-  // Constants
-  const PLAYERS = ['Brian','Jeff','Tucker','Clint'];
-  const COURSES = [
-    {round:1,name:'Glen Dornoch'},
-    {round:2,name:'Sea Trail Jones'},
-    {round:3,name:'Sea Trail Byrd'}
-  ];
-  const TOURNAMENT_DOC = 'golf_tourney_default_prod';
-  const HOLES_COL = db.collection('tournaments').doc(TOURNAMENT_DOC).collection('holes');
+    // DOM Elements
+    const roundSelect = document.getElementById('round-select');
+    const holeSelect = document.getElementById('hole-select');
+    const inputsDiv = document.getElementById('inputs');
+    const submitBtn = document.getElementById('submit');
+    const undoBtn = document.getElementById('undo');
+    const totalsDiv = document.getElementById('totals');
+    const messageEl = document.getElementById('message');
+    const currentLabel = document.getElementById('current-label');
+    const scorecardsPage = document.getElementById('scorecards-page');
+    const scorecardsEl = document.getElementById('scorecards');
+    const entryPage = document.getElementById('entry-page');
 
-  // State
-  let holesCache = {}; // key -> {round,hole,scores,updatedAt}
-  let lastAction = null; // {key, prev}
-
-  // DOM
-  const roundSelect = document.getElementById('round-select');
-  const holeSelect = document.getElementById('hole-select');
-  const inputsDiv = document.getElementById('inputs');
-  const submitBtn = document.getElementById('submit');
-  const undoBtn = document.getElementById('undo');
-  const totalsDiv = document.getElementById('totals');
-  const messageEl = document.getElementById('message');
-  const currentLabel = document.getElementById('current-label');
-  const scorecardsPage = document.getElementById('scorecards-page');
-  const scorecardsEl = document.getElementById('scorecards');
-  const entryPage = document.getElementById('entry-page');
-
-  // Navigation buttons
-  document.getElementById('btn-entry').addEventListener('click', ()=>{ scorecardsPage.style.display='none'; entryPage.scrollIntoView(); });
-  document.getElementById('btn-scorecards').addEventListener('click', ()=>{ scorecardsPage.style.display='block'; renderScorecards(); scorecardsPage.scrollIntoView(); });
-
-  // Populate selects
-  function initSelectors(){
-    COURSES.forEach(c=>{ const o=document.createElement('option'); o.value=c.round; o.textContent='Round '+c.round; roundSelect.appendChild(o); });
-    for(let i=1;i<=18;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i; holeSelect.appendChild(o); }
-  }
-
-  // Helper key
-  function holeKey(round,hole){ return `r${round}_h${hole}`; }
-
-  // Render inputs for selected hole
-  function renderInputs(){
-    inputsDiv.innerHTML='';
-    const round = Number(roundSelect.value); const hole = Number(holeSelect.value);
-    currentLabel.textContent = `Round ${round} • Hole ${hole} — ${COURSES[round-1].name}`;
-    const key = holeKey(round,hole);
-    const existing = holesCache[key] && holesCache[key].scores ? holesCache[key].scores : {};
-    PLAYERS.forEach(p=>{
-      const row = document.createElement('div'); row.className='player-input';
-      const name = document.createElement('span'); name.textContent = p;
-      const sel = document.createElement('select'); sel.id = `in_${p}`;
-      // empty option to force explicit choice when no existing value
-      const emptyOpt = document.createElement('option'); emptyOpt.value = ''; emptyOpt.textContent = '';
-      sel.appendChild(emptyOpt);
-      for(let v=1; v<=15; v++){
-        const o = document.createElement('option'); o.value = String(v); o.textContent = String(v);
-        if(existing[p] != null && Number(existing[p]) === v) o.selected = true;
-        sel.appendChild(o);
-      }
-      row.appendChild(name); row.appendChild(sel); inputsDiv.appendChild(row);
-    });
-  }
-
-  // Recompute totals and ranks
-  function recomputeAndRenderTotals(){
-    const totals = {};
-    PLAYERS.forEach(p=>totals[p]=0);
-    // Sum all holes present in holesCache
-    Object.values(holesCache).forEach(doc=>{
-      const s = doc.scores || {};
-      PLAYERS.forEach(p=>{ const v = Number(s[p]); if(!Number.isNaN(v)) totals[p]+=v; });
-    });
-    // Build sorted array
-    const arr = Object.entries(totals).map(([player,total])=>({player,total}));
-    arr.sort((a,b)=>a.total - b.total);
-    // Determine ranks with ties; specifically handle tied-first as T1
-    const ranks = {};
-    let rank = 1;
-    for(let i=0;i<arr.length;i++){
-      if(i>0 && arr[i].total !== arr[i-1].total) rank = i+1;
-      ranks[arr[i].player] = rank;
-    }
-    // Count how many at top score
-    const topScore = arr[0].total;
-    const topCount = arr.filter(x=>x.total===topScore).length;
-    // Render
-    totalsDiv.innerHTML='';
-    arr.forEach(a=>{
-      const row = document.createElement('div'); row.className='player-row';
-      const left = document.createElement('div'); left.innerHTML = `<div style=\"font-weight:600\">${a.player}</div><div class=\"muted small\">Total</div>`;
-      const right = document.createElement('div');
-      let displayRank = ranks[a.player];
-      if(displayRank === 1 && topCount>1) displayRank = 'T1';
-      right.innerHTML = `<div style=\"font-weight:700\">${a.total}</div><div class=\"muted small\">${displayRank}</div>`;
-      row.appendChild(left); row.appendChild(right); totalsDiv.appendChild(row);
-    });
-  }
-
-  // Listen to Firestore realtime
-  function startRealtime(){
-    HOLES_COL.onSnapshot(snapshot=>{
-      snapshot.docChanges().forEach(change=>{
-        const id = change.doc.id; const data = change.doc.data();
-        if(change.type === 'removed'){
-          delete holesCache[id];
-        } else {
-          holesCache[id] = data;
-        }
+    function initSelectors(){
+      COURSES.forEach(c=>{
+        const o=document.createElement('option');
+        o.value=c.round;
+        o.textContent='Round '+c.round;
+        roundSelect.appendChild(o);
       });
-      recomputeAndRenderTotals();
-      renderInputs();
-    });
-  }
-
-  // Validate inputs
-  function collectInputs(){
-    const round = Number(roundSelect.value); const hole = Number(holeSelect.value);
-    const key = holeKey(round,hole);
-    const scores = {};
-    for(const p of PLAYERS){
-      const v = document.getElementById('in_'+p).value.trim();
-      if(v === ''){ throw new Error('All scores are required; no blanks allowed'); }
-      if(!/^\d+$/.test(v)){ throw new Error('Scores must be whole numbers'); }
-      const n = Number(v); if(n<0 || n>20) throw new Error('Scores must be between 0 and 20');
-      scores[p] = n;
-    }
-    return {round,hole,key,scores};
-  }
-
-  // Submit scores
-  submitBtn.addEventListener('click', async ()=>{
-    try{
-      messageEl.textContent='';
-      const {round,hole,key,scores} = collectInputs();
-      // Save previous for undo
-      const prev = holesCache[key] ? {...holesCache[key]} : null;
-      lastAction = {key, prev};
-      await HOLES_COL.doc(key).set({round,hole,scores,updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
-      messageEl.textContent = 'Saved.';
-      // Auto advance
-      let nextHole = hole + 1; let nextRound = round;
-      if(nextHole > 18){ nextHole = 1; nextRound = Math.min(3, round + 1); }
-      roundSelect.value = nextRound; holeSelect.value = nextHole; renderInputs();
-      setTimeout(()=>messageEl.textContent='',1400);
-    } catch(e){ messageEl.textContent = e.message; }
-  });
-
-  // Undo last action
-  undoBtn.addEventListener('click', async ()=>{
-    if(!lastAction){ messageEl.textContent = 'Nothing to undo.'; return; }
-    const {key,prev} = lastAction;
-    if(prev){ await HOLES_COL.doc(key).set(prev); }
-    else { await HOLES_COL.doc(key).delete(); }
-    lastAction = null; messageEl.textContent = 'Undone.'; setTimeout(()=>messageEl.textContent='',1200);
-  });
-
-  // Render scorecards (3 tables of 18)
-  function renderScorecards(){
-    scorecardsEl.innerHTML = '';
-    COURSES.forEach(c=>{
-      const container = document.createElement('div'); container.style.marginBottom='12px';
-      const h = document.createElement('h4'); h.textContent = `${c.name} — Round ${c.round}`; container.appendChild(h);
-      const table = document.createElement('table');
-      const thead = document.createElement('thead'); const tr = document.createElement('tr');
-      tr.innerHTML = '<th>Hole</th>' + PLAYERS.map(p=>`<th>${p}</th>`).join('');
-      thead.appendChild(tr); table.appendChild(thead);
-      const tbody = document.createElement('tbody');
       for(let i=1;i<=18;i++){
-        const key = holeKey(c.round,i);
-        const row = document.createElement('tr');
-        const tdHole = document.createElement('td'); tdHole.textContent = i; row.appendChild(tdHole);
-        PLAYERS.forEach(p=>{
-          const td = document.createElement('td'); td.textContent = (holesCache[key] && holesCache[key].scores && holesCache[key].scores[p] != null) ? holesCache[key].scores[p] : '';
-          row.appendChild(td);
-        });
-        tbody.appendChild(row);
+        const o=document.createElement('option');
+        o.value=i;
+        o.textContent=i;
+        holeSelect.appendChild(o);
       }
-      table.appendChild(tbody); container.appendChild(table); scorecardsEl.appendChild(container);
-    });
-  }
-
-  // Edit dialog (prompt-based for single-file simplicity)
-  async function openEditDialog(round,hole){
-    const key = holeKey(round,hole);
-    const existing = holesCache[key] && holesCache[key].scores ? holesCache[key].scores : {};
-    const newScores = {};
-    for(const p of PLAYERS){
-      const input = prompt(`Enter score for ${p} (Round ${round} Hole ${hole})`, existing[p] != null ? existing[p] : '');
-      if(input === null) return; // cancelled
-      const trimmed = String(input).trim(); if(trimmed === ''){ alert('All scores are required'); return; }
-      if(!/^\d+$/.test(trimmed)){ alert('Only whole numbers allowed'); return; }
-      const n = Number(trimmed); if(n<0 || n>20){ alert('Scores must be between 0 and 20'); return; }
-      newScores[p] = n;
     }
-    const prev = holesCache[key] ? {...holesCache[key]} : null; lastAction = {key, prev};
-    await HOLES_COL.doc(key).set({round,hole,scores:newScores,updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
-    alert('Saved');
-  }
 
-  // Initial setup
-  (function(){
+    function holeKey(round,hole){ return `r${round}_h${hole}`; }
+
+    function renderInputs(){
+      inputsDiv.innerHTML='';
+      const round = Number(roundSelect.value);
+      const hole = Number(holeSelect.value);
+      currentLabel.textContent = `Round ${round} • Hole ${hole} — ${COURSES[round-1].name}`;
+      const key = holeKey(round,hole);
+      const existing = holesCache[key] && holesCache[key].scores ? holesCache[key].scores : {};
+      
+      PLAYERS.forEach(p=>{
+        const row = document.createElement('div');
+        row.className='player-input';
+        const name = document.createElement('span');
+        name.textContent = p;
+        const sel = document.createElement('select');
+        sel.id = `in_${p}`;
+        const emptyOpt = document.createElement('option');
+        emptyOpt.value = ''; emptyOpt.textContent = '-';
+        sel.appendChild(emptyOpt);
+        for(let v=1; v<=15; v++){
+          const o = document.createElement('option');
+          o.value = String(v); o.textContent = String(v);
+          if(existing[p] != null && Number(existing[p]) === v) o.selected = true;
+          sel.appendChild(o);
+        }
+        row.appendChild(name);
+        row.appendChild(sel);
+        inputsDiv.appendChild(row);
+      });
+    }
+
+    function recomputeAndRenderTotals(){
+      const totals = {};
+      PLAYERS.forEach(p=>totals[p]=0);
+      Object.values(holesCache).forEach(doc=>{
+        const s = doc.scores || {};
+        PLAYERS.forEach(p=>{
+          const v = Number(s[p]);
+          if(!Number.isNaN(v)) totals[p]+=v;
+        });
+      });
+      const arr = Object.entries(totals).map(([player,total])=>({player,total}));
+      arr.sort((a,b)=>a.total - b.total);
+      
+      const ranks = {};
+      let rank = 1;
+      for(let i=0;i<arr.length;i++){
+        if(i>0 && arr[i].total !== arr[i-1].total) rank = i+1;
+        ranks[arr[i].player] = rank;
+      }
+      
+      const topScore = arr[0].total;
+      const topCount = arr.filter(x=>x.total===topScore).length;
+
+      totalsDiv.innerHTML='';
+      arr.forEach(a=>{
+        const row = document.createElement('div');
+        row.className='player-row';
+        let displayRank = ranks[a.player];
+        if(displayRank === 1 && topCount>1) displayRank = 'T1';
+        row.innerHTML = `
+          <div><div style="font-weight:600">${a.player}</div><div class="muted small">Total</div></div>
+          <div style="text-align:right"><div style="font-weight:700">${a.total}</div><div class="muted small">${displayRank}</div></div>
+        `;
+        totalsDiv.appendChild(row);
+      });
+    }
+
+    function startRealtime(){
+      HOLES_COL.onSnapshot(snapshot=>{
+        snapshot.docChanges().forEach(change=>{
+          const id = change.doc.id;
+          const data = change.doc.data();
+          if(change.type === 'removed') delete holesCache[id];
+          else holesCache[id] = data;
+        });
+        recomputeAndRenderTotals();
+        renderInputs();
+      }, err => {
+        console.error("Firestore error:", err);
+        messageEl.textContent = "Connection error. Check console.";
+      });
+    }
+
+    submitBtn.addEventListener('click', async ()=>{
+      try{
+        messageEl.textContent='Saving...';
+        const round = Number(roundSelect.value);
+        const hole = Number(holeSelect.value);
+        const key = holeKey(round,hole);
+        const scores = {};
+        PLAYERS.forEach(p=>{
+          const v = document.getElementById('in_'+p).value;
+          if(!v) throw new Error("Please enter scores for everyone.");
+          scores[p] = Number(v);
+        });
+
+        const prev = holesCache[key] ? {...holesCache[key]} : null;
+        lastAction = {key, prev};
+
+        await HOLES_COL.doc(key).set({
+          round, hole, scores, 
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        messageEl.textContent = 'Saved.';
+        let nextHole = hole + 1;
+        let nextRound = round;
+        if(nextHole > 18){ nextHole = 1; nextRound = Math.min(3, round + 1); }
+        roundSelect.value = nextRound;
+        holeSelect.value = nextHole;
+        renderInputs();
+        setTimeout(()=>messageEl.textContent='', 2000);
+      } catch(e){
+        messageEl.textContent = e.message;
+      }
+    });
+
+    undoBtn.addEventListener('click', async ()=>{
+      if(!lastAction) return;
+      const {key, prev} = lastAction;
+      if(prev) await HOLES_COL.doc(key).set(prev);
+      else await HOLES_COL.doc(key).delete();
+      lastAction = null;
+      messageEl.textContent = 'Undone.';
+    });
+
+    function renderScorecards(){
+      scorecardsEl.innerHTML = '';
+      COURSES.forEach(c=>{
+        const container = document.createElement('div');
+        container.style.marginBottom='20px';
+        container.innerHTML = `<h4>${c.name} — Round ${c.round}</h4>`;
+        const table = document.createElement('table');
+        table.innerHTML = `<thead><tr><th>Hole</th>${PLAYERS.map(p=>`<th>${p}</th>`).join('')}</tr></thead>`;
+        const tbody = document.createElement('tbody');
+        for(let i=1;i<=18;i++){
+          const key = holeKey(c.round,i);
+          const data = holesCache[key] || {};
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${i}</td>` + PLAYERS.map(p=>`<td>${(data.scores && data.scores[p]) || ''}</td>`).join('');
+          tbody.appendChild(row);
+        }
+        table.appendChild(tbody);
+        container.appendChild(table);
+        scorecardsEl.appendChild(container);
+      });
+    }
+
+    document.getElementById('btn-entry').addEventListener('click', ()=>{
+      scorecardsPage.style.display='none';
+      entryPage.style.display='flex';
+    });
+
+    document.getElementById('btn-scorecards').addEventListener('click', ()=>{
+      entryPage.style.display='none';
+      scorecardsPage.style.display='block';
+      renderScorecards();
+    });
+
+    // Init
     initSelectors();
-    roundSelect.value = 1; holeSelect.value = 1; renderInputs(); startRealtime(); renderScorecards();
-    // small UX: update inputs when selectors change
-    roundSelect.addEventListener('change', ()=>{ renderInputs(); });
-    holeSelect.addEventListener('change', ()=>{ renderInputs(); });
-  })();
+    roundSelect.value = 1;
+    holeSelect.value = 1;
+    roundSelect.onchange = renderInputs;
+    holeSelect.onchange = renderInputs;
+    startRealtime();
 
   </script>
-
-  <!-- Firestore rules suggestion (paste to console) -->
-  <!--
-  // Example Firestore rules for development (test mode). Replace with stricter rules before sharing.
-  rules_version = '2';
-  service cloud.firestore {
-    match /databases/{database}/documents {
-      match /tournaments/{tournament}/holes/{holeId} {
-        allow read, write: if true; // DEVELOPMENT ONLY
-      }
-    }
-  }
-  -->
-
-<style>
-  /* Narrower entry rows for compact layout */
-  .player-input{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-  .player-input span{ width:140px; flex:0 0 140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .player-input select{ width:64px; padding:4px 6px; font-size:13px; }
-  /* Make scorecard tables more compact too */
-  .scorecard-table td, .scorecard-table th{ padding:6px 8px; }
-</style>
 </body>
 </html>
