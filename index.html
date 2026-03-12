@@ -81,6 +81,10 @@
       <div class="box"><strong>Status:</strong> <span id="matchStatus">Not started</span></div>
       <div class="box"><strong>Progress:</strong> <span id="matchProgress">0</span> / 9 holes saved</div>
     </div>
+
+    <div class="small muted" style="margin-top:6px">
+      Live sync is enabled. If you don’t see updates across devices, check Firestore rules (read/write) and that your Google Sites embed uses the GitHub Pages URL.
+    </div>
   </section>
 
   <!-- SCORE ENTRY (Holes 1–9, current match) -->
@@ -119,8 +123,36 @@
   // Fixed players (only these 4 are selectable)
   const PLAYERS = ['Tucker','Clint','Brian','Jeff'];
 
-  // localStorage
+  // Local fallback (if Firestore is unavailable)
   const LOCAL_KEY = 'golf_matchplay_6matches_front9_v1';
+
+  // ------------------- Firebase / Firestore (LIVE SYNC) -------------------
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    onSnapshot
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // Your real Firebase configuration (do not replace)
+  const firebaseConfig = {
+    apiKey: "AIzaSyBTW-gbxRXwdd7XY9zfyXJl1JG-g4gKe_k",
+    authDomain: "golf-scorer-8195d.firebaseapp.com",
+    projectId: "golf-scorer-8195d",
+    storageBucket: "golf-scorer-8195d.firebasestorage.app",
+    messagingSenderId: "265598990172",
+    appId: "1:265598990172:web:4b274cec22009e34c47399"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const STATE_REF = doc(db, "tournaments", "main");
+
+  let unsubscribeLive = null;
+  let isApplyingRemote = false;
+  // -----------------------------------------------------------------------
 
   // State:
   // - currentMatch: 1..6
@@ -134,18 +166,58 @@
 
   function blankMatch(){ return { setup: null, holes: {} }; }
 
-  function loadState(){
-    const raw = localStorage.getItem(LOCAL_KEY);
-    if(raw){
-      try{ state = JSON.parse(raw) || state; }catch(e){ console.error(e); }
-    }
-    // Ensure matches 1..6 exist
+  function ensureMatches(){
     for(let m=1;m<=6;m++) if(!state.matches[m]) state.matches[m] = blankMatch();
     if(!state.currentMatch || state.currentMatch<1 || state.currentMatch>6) state.currentMatch = 1;
   }
 
-  function saveState(){
-    try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); }catch(e){ console.error(e); }
+  // Firestore-backed load/save with localStorage fallback
+  async function loadState(){
+    try{
+      const snap = await getDoc(STATE_REF);
+      if(snap.exists()){
+        state = snap.data();
+      } else {
+        ensureMatches();
+        await setDoc(STATE_REF, state);
+      }
+    }catch(e){
+      console.error("loadState error:", e);
+      // fallback to local storage so you can keep playing
+      const raw = localStorage.getItem(LOCAL_KEY);
+      if(raw){
+        try{ state = JSON.parse(raw) || state; }catch(e2){ console.error(e2); }
+      }
+      ensureMatches();
+    }
+  }
+
+  async function saveState(){
+    try{
+      if(isApplyingRemote) return; // prevent feedback loop
+      await setDoc(STATE_REF, state);
+    }catch(e){
+      console.error("saveState error:", e);
+      // fallback locally so no data is lost
+      try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); }catch(e2){ console.error(e2); }
+    }
+  }
+
+  function startLiveSync(){
+    if(unsubscribeLive) unsubscribeLive();
+    unsubscribeLive = onSnapshot(STATE_REF, (snap) => {
+      if(!snap.exists()) return;
+
+      console.log("🔥 LIVE UPDATE RECEIVED", new Date().toLocaleTimeString());
+
+      isApplyingRemote = true;
+      state = snap.data();
+      ensureMatches();
+      renderAll();
+      isApplyingRemote = false;
+    }, (err) => {
+      console.error("Live sync error:", err);
+    });
   }
 
   // DOM helpers
@@ -607,11 +679,14 @@
   // Board
   $('refresh').addEventListener('click', renderBoard);
 
-  // Init
-  loadState();
-  renderHoleSelect();
-  renderAll();
-  show('setup');
+  // Init (async)
+  (async function init(){
+    await loadState();
+    startLiveSync();
+    renderHoleSelect();
+    renderAll();
+    show('setup');
+  })();
 </script>
 </body>
 </html>
