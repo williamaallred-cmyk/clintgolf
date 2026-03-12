@@ -3,313 +3,615 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Golf Tournament — Production</title>
-  <meta name="description" content="Real-time golf scorekeeper for a 4-player, 3-round (54-hole) stroke-play tournament." />
+  <title>Golf Match Play — 6 Matches (Front 9)</title>
   <style>
-    :root{--bg:#f6fbf4;--card:#ffffff;--accent:#2d6b2f;--muted:#6b6b6b;--danger:#9b2b2b}
-    *{box-sizing:border-box}
-    body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial; margin:0;background:var(--bg);color:#063019}
-    .wrap{max-width:1100px;margin:18px auto;padding:18px}
-    header{display:flex;align-items:center;gap:12px}
-    header h1{margin:0;font-size:1.2rem}
-    .nav{display:flex;gap:8px;margin:14px 0}
-    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 8px 30px rgba(10,40,25,0.06)}
-    .layout{display:flex;gap:16px}
-    .left{flex:1;min-width:300px}
-    .right{width:340px}
-    label{display:block;font-size:0.9rem;margin:8px 0 6px}
-    select,input[type=number]{width:100%;padding:10px;border-radius:8px;border:1px solid #e6f0e6}
-    .player-input{display:flex;gap:10px;align-items:center;margin-bottom:8px}
-    .player-input span{width:110px}
-    .controls{display:flex;gap:8px;margin-top:10px}
-    button{background:var(--accent);color:#fff;border:0;padding:10px 12px;border-radius:8px;cursor:pointer}
-    button.ghost{background:transparent;color:var(--accent);border:1px solid #e6f0e6}
-    button.warn{background:var(--danger)}
-    .totals-list{display:flex;flex-direction:column;gap:8px}
-    .player-row{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:#f8fbf8}
-    .muted{color:var(--muted);font-size:0.85rem}
-    .small{font-size:0.85rem}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:8px;border-bottom:1px solid #eef6ec;text-align:left}
-    .edit-btn{background:#e9f3e9;color:#083018;border-radius:6px;padding:6px 8px;border:0;cursor:pointer}
-    @media(max-width:900px){.layout{flex-direction:column}.right{width:auto}}
-    
-    #round-select, #hole-select { height:36px; padding:2px 6px; font-size:14px; margin-bottom:10px; }
-    .player-input{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-    .player-input span{ width:140px; flex:0 0 140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .player-input select{ width:64px; padding:4px 6px; font-size:13px; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;max-width:980px;margin:18px auto;padding:12px;color:#111}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap}
+    h1{font-size:18px;margin:0}
+    .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .panel{border:1px solid #ddd;border-radius:10px;padding:12px;margin-bottom:12px;background:#fafafa}
+    .row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+    label{font-size:13px;min-width:44px}
+    select{padding:4px 6px;border-radius:8px;border:1px solid #ccc;font-size:13px;height:28px}
+    button{padding:6px 10px;border-radius:8px;border:1px solid #bbb;background:#f3f3f3;cursor:pointer}
+    button.primary{background:#0366d6;color:#fff;border-color:#0366d6}
+    button:disabled{opacity:0.55;cursor:not-allowed}
+    .small{font-size:12px;color:#555}
+    .muted{color:#666;font-size:13px}
+    .player-input{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+    .player-input span{width:140px;flex:0 0 140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .player-input select{width:64px}
+    table{border-collapse:collapse;width:100%}
+    th,td{border:1px solid #eee;text-align:center;padding:6px 8px}
+    .flex-between{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .hidden{display:none}
+    .pillrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .pill{padding:6px;border-radius:8px;border:1px solid #ddd;min-width:40px;text-align:center;background:#fff}
+    .pill.win1{background:#e6ffed;border-color:#8be28a}
+    .pill.win2{background:#ffeef0;border-color:#ffb3ba}
+    .notice{padding:8px 10px;border-radius:10px;border:1px solid #e6e6e6;background:#fff}
+    .kpi{display:flex;gap:10px;flex-wrap:wrap}
+    .kpi .box{padding:8px 10px;border-radius:10px;border:1px solid #e6e6e6;background:#fff}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 7v7c0 5 4 9 9 9s9-4 9-9V7l-9-5z" fill="#2d6b2f"/></svg>
-      <h1>Golf Tournament Scorekeeper</h1>
-    </header>
+  <header>
+    <div>
+      <h1>Golf Match Play — 6 Matches (Front 9)</h1>
+      <div class="small muted">Lowest team total wins each hole (1 point). Ties award 0 points. No carryovers.</div>
+    </div>
+    <div class="controls">
+      <button id="nav-setup">Match Setup</button>
+      <button id="nav-entry" class="primary">Score Entry</button>
+      <button id="nav-board">Scoreboard</button>
+    </div>
+  </header>
 
-    <nav class="nav">
-      <button id="btn-entry">Score Entry</button>
-      <button id="btn-scorecards" class="ghost">Scorecards</button>
-      <div style="flex:1"></div>
-      <div class="muted">Players: Brian, Jeff, Tucker, Clint</div>
-    </nav>
+  <!-- MATCH SETUP (Current match only) -->
+  <section id="setup" class="panel">
+    <div class="flex-between">
+      <strong id="setupTitle">Match Setup</strong>
+      <span class="small muted">Set teams for the current match, then enter Hole 1–9 scores.</span>
+    </div>
 
-    <section id="entry-page" class="card layout">
-      <div class="left">
-        <h3>Enter scores — <span id="current-label">Loading...</span></h3>
-        <label>Round</label>
-        <select id="round-select"></select>
-        <label>Hole</label>
-        <select id="hole-select"></select>
-        <div id="inputs" style="margin-top:12px"></div>
-        <div class="controls">
-          <button id="submit">Submit</button>
-          <button id="undo" class="ghost">Undo</button>
-        </div>
-        <div id="message" class="muted small" style="margin-top:8px"></div>
-      </div>
-      <aside class="right">
-        <h3>Totals & Ranking</h3>
-        <div id="totals" class="totals-list"></div>
-        <div style="margin-top:12px" class="muted small">Ranking: lowest total = 1st.</div>
-      </aside>
-    </section>
+    <div id="lockBanner" class="notice hidden" style="margin-top:10px">
+      This match is locked because the previous match isn’t complete yet.
+    </div>
 
-    <section id="scorecards-page" class="card" style="margin-top:14px;display:none">
-      <h3>Scorecards</h3>
-      <div id="scorecards"></div>
-    </section>
-  </div>
+    <div class="row" style="margin-top:10px">
+      <strong style="min-width:72px">Team 1</strong>
+      <label>Player</label><select id="t1p1"></select>
+      <label>Player</label><select id="t1p2"></select>
+    </div>
 
-  <!-- Firebase Scripts -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <div class="row">
+      <strong style="min-width:72px">Team 2</strong>
+      <label>Player</label><select id="t2p1"></select>
+      <label>Player</label><select id="t2p2"></select>
+    </div>
 
-  <script>
-    // Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyBTW-gbxRXwdd7XY9zfyXJl1JG-g4gKe_k",
-      authDomain: "golf-scorer-8195d.firebaseapp.com",
-      projectId: "golf-scorer-8195d",
-      storageBucket: "golf-scorer-8195d.firebasestorage.app",
-      messagingSenderId: "265598990172",
-      appId: "1:265598990172:web:4b274cec22009e34c47399"
-    };
+    <div class="row">
+      <button id="saveSetup" class="primary">Save Teams</button>
+      <button id="clearSetup">Clear</button>
+      <span id="setupMsg" class="muted"></span>
+    </div>
 
-    // Initialize
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    <div class="kpi" style="margin-top:8px">
+      <div class="box"><strong>Current match:</strong> <span id="matchNum">1</span> / 6</div>
+      <div class="box"><strong>Status:</strong> <span id="matchStatus">Not started</span></div>
+      <div class="box"><strong>Progress:</strong> <span id="matchProgress">0</span> / 9 holes saved</div>
+    </div>
+  </section>
 
-    const PLAYERS = ['Brian','Jeff','Tucker','Clint'];
-    const COURSES = [
-      {round:1, name:'Glen Dornoch'},
-      {round:2, name:'Sea Trail Jones'},
-      {round:3, name:'Sea Trail Byrd'}
-    ];
-    const TOURNAMENT_DOC = 'golf_tourney_default_prod';
-    const HOLES_COL = db.collection('tournaments').doc(TOURNAMENT_DOC).collection('holes');
+  <!-- SCORE ENTRY (Holes 1–9, current match) -->
+  <section id="entry" class="panel hidden">
+    <div class="row">
+      <label for="hole">Hole</label>
+      <select id="hole"></select>
+      <button id="loadHole">Load</button>
+      <span id="msg" class="muted"></span>
+    </div>
 
-    // State
-    let holesCache = {};
-    let lastAction = null;
+    <div id="entryLabel" style="margin-bottom:8px;font-weight:600"></div>
+    <div id="inputs"></div>
 
-    // DOM Elements
-    const roundSelect = document.getElementById('round-select');
-    const holeSelect = document.getElementById('hole-select');
-    const inputsDiv = document.getElementById('inputs');
-    const submitBtn = document.getElementById('submit');
-    const undoBtn = document.getElementById('undo');
-    const totalsDiv = document.getElementById('totals');
-    const messageEl = document.getElementById('message');
-    const currentLabel = document.getElementById('current-label');
-    const scorecardsPage = document.getElementById('scorecards-page');
-    const scorecardsEl = document.getElementById('scorecards');
-    const entryPage = document.getElementById('entry-page');
+    <div class="row" style="margin-top:10px">
+      <button id="saveHole" class="primary">Save Hole</button>
+      <button id="undo">Undo</button>
+    </div>
 
-    function initSelectors(){
-      COURSES.forEach(c=>{
-        const o=document.createElement('option');
-        o.value=c.round;
-        o.textContent='Round '+c.round;
-        roundSelect.appendChild(o);
-      });
-      for(let i=1;i<=18;i++){
-        const o=document.createElement('option');
-        o.value=i;
-        o.textContent=i;
-        holeSelect.appendChild(o);
-      }
+    <div class="small muted" style="margin-top:6px">
+      Tip: Save Hole 1 → auto-advances to Hole 2. When all 9 holes are saved, the app moves you to the next match.
+    </div>
+  </section>
+
+  <!-- SCOREBOARD -->
+  <section id="board" class="panel hidden">
+    <div class="flex-between">
+      <strong>Scoreboard</strong>
+      <button id="refresh">Refresh</button>
+    </div>
+
+    <div id="boardBody" style="margin-top:10px"></div>
+  </section>
+
+<script>
+  // Fixed players (only these 4 are selectable)
+  const PLAYERS = ['Tucker','Clint','Brian','Jeff'];
+
+  // localStorage
+  const LOCAL_KEY = 'golf_matchplay_6matches_front9_v1';
+
+  // State:
+  // - currentMatch: 1..6
+  // - matches[m] = { setup:{team1:[a,b], team2:[c,d], updatedAt} | null, holes:{h1..h9:{scores:{name:number}, updatedAt}} }
+  let state = {
+    currentMatch: 1,
+    matches: {}
+  };
+
+  let lastAction = null; // {match, key, prev}
+
+  function blankMatch(){ return { setup: null, holes: {} }; }
+
+  function loadState(){
+    const raw = localStorage.getItem(LOCAL_KEY);
+    if(raw){
+      try{ state = JSON.parse(raw) || state; }catch(e){ console.error(e); }
+    }
+    // Ensure matches 1..6 exist
+    for(let m=1;m<=6;m++) if(!state.matches[m]) state.matches[m] = blankMatch();
+    if(!state.currentMatch || state.currentMatch<1 || state.currentMatch>6) state.currentMatch = 1;
+  }
+
+  function saveState(){
+    try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); }catch(e){ console.error(e); }
+  }
+
+  // DOM helpers
+  function $(id){ return document.getElementById(id); }
+  function option(value, text){ const o=document.createElement('option'); o.value=value; o.textContent=text; return o; }
+
+  function fillPlayerSelect(sel){
+    sel.innerHTML='';
+    sel.appendChild(option('', '--'));
+    PLAYERS.forEach(p=> sel.appendChild(option(p,p)));
+  }
+
+  function holesSavedCount(matchId){
+    const holes = state.matches[matchId].holes || {};
+    let c = 0;
+    for(let h=1;h<=9;h++) if(holes[`h${h}`] && holes[`h${h}`].scores) c++;
+    return c;
+  }
+
+  function matchComplete(matchId){ return holesSavedCount(matchId) === 9; }
+
+  function canAccessMatch(matchId){
+    // You can only access match 1, or match N if match N-1 is complete
+    if(matchId === 1) return true;
+    return matchComplete(matchId-1);
+  }
+
+  function current(){ return state.currentMatch; }
+
+  function setCurrentMatch(m){
+    state.currentMatch = m;
+    saveState();
+    renderAll();
+  }
+
+  function advanceIfComplete(){
+    const m = current();
+    if(matchComplete(m) && m < 6){
+      state.currentMatch = m + 1;
+      saveState();
+      show('setup');
+      renderAll();
+    }
+  }
+
+  function renderSetup(){
+    const m = current();
+    $('setupTitle').textContent = `Match ${m} Setup (Holes 1–9)`;
+    $('matchNum').textContent = String(m);
+
+    const locked = !canAccessMatch(m);
+    $('lockBanner').classList.toggle('hidden', !locked);
+
+    fillPlayerSelect($('t1p1')); fillPlayerSelect($('t1p2'));
+    fillPlayerSelect($('t2p1')); fillPlayerSelect($('t2p2'));
+
+    const def = state.matches[m].setup;
+    if(def){
+      $('t1p1').value = def.team1[0] || '';
+      $('t1p2').value = def.team1[1] || '';
+      $('t2p1').value = def.team2[0] || '';
+      $('t2p2').value = def.team2[1] || '';
+    } else {
+      // default arrangement
+      $('t1p1').value = 'Tucker';
+      $('t1p2').value = 'Clint';
+      $('t2p1').value = 'Brian';
+      $('t2p2').value = 'Jeff';
     }
 
-    function holeKey(round,hole){ return `r${round}_h${hole}`; }
+    // Disable setup controls if locked
+    ['t1p1','t1p2','t2p1','t2p2','saveSetup','clearSetup'].forEach(id=>{ $(id).disabled = locked; });
 
-    function renderInputs(){
-      inputsDiv.innerHTML='';
-      const round = Number(roundSelect.value);
-      const hole = Number(holeSelect.value);
-      currentLabel.textContent = `Round ${round} • Hole ${hole} — ${COURSES[round-1].name}`;
-      const key = holeKey(round,hole);
-      const existing = holesCache[key] && holesCache[key].scores ? holesCache[key].scores : {};
-      
-      PLAYERS.forEach(p=>{
-        const row = document.createElement('div');
-        row.className='player-input';
-        const name = document.createElement('span');
-        name.textContent = p;
-        const sel = document.createElement('select');
-        sel.id = `in_${p}`;
-        const emptyOpt = document.createElement('option');
-        emptyOpt.value = ''; emptyOpt.textContent = '-';
-        sel.appendChild(emptyOpt);
-        for(let v=1; v<=15; v++){
-          const o = document.createElement('option');
-          o.value = String(v); o.textContent = String(v);
-          if(existing[p] != null && Number(existing[p]) === v) o.selected = true;
-          sel.appendChild(o);
+    const saved = holesSavedCount(m);
+    $('matchProgress').textContent = String(saved);
+
+    const status = matchComplete(m)
+      ? 'Complete'
+      : (saved>0 ? 'In progress' : 'Not started');
+
+    $('matchStatus').textContent = status;
+  }
+
+  function validateSetup(team1, team2){
+    const all = [...team1, ...team2];
+    if(all.some(x=>!x)) return 'Pick all 4 players.';
+    const set = new Set(all);
+    if(set.size !== 4) return 'Each player must be used once (no duplicates).';
+    return null;
+  }
+
+  function saveTeams(){
+    const m = current();
+    if(!canAccessMatch(m)){ $('setupMsg').textContent = 'Locked until previous match is complete.'; return; }
+
+    const team1 = [$('t1p1').value, $('t1p2').value];
+    const team2 = [$('t2p1').value, $('t2p2').value];
+    const err = validateSetup(team1, team2);
+    if(err){ $('setupMsg').textContent = err; return; }
+
+    state.matches[m].setup = {team1, team2, updatedAt: new Date().toISOString()};
+    saveState();
+    $('setupMsg').textContent = 'Saved.';
+    renderEntry();
+    renderBoard();
+    setTimeout(()=> $('setupMsg').textContent='', 1200);
+  }
+
+  function clearTeams(){
+    const m = current();
+    if(!canAccessMatch(m)){ $('setupMsg').textContent = 'Locked until previous match is complete.'; return; }
+
+    state.matches[m].setup = null;
+    saveState();
+    renderSetup();
+    renderEntry();
+    renderBoard();
+    $('setupMsg').textContent = 'Cleared.';
+    setTimeout(()=> $('setupMsg').textContent='', 1200);
+  }
+
+  function renderHoleSelect(){
+    const sel = $('hole');
+    sel.innerHTML='';
+    for(let h=1; h<=9; h++) sel.appendChild(option(String(h), `Hole ${h}`));
+  }
+
+  function renderEntry(){
+    const m = current();
+    const locked = !canAccessMatch(m);
+
+    const setup = state.matches[m].setup;
+    const hole = Number($('hole').value || 1);
+
+    $('entryLabel').textContent = setup
+      ? `Match ${m} — Hole ${hole}  |  Team 1: ${setup.team1.join(' + ')}  vs  Team 2: ${setup.team2.join(' + ')}`
+      : `Match ${m} — Hole ${hole}  |  Teams not set yet`;
+
+    const inputs = $('inputs');
+    inputs.innerHTML='';
+
+    if(locked){
+      inputs.appendChild(document.createTextNode('This match is locked until the previous match is complete.'));
+      $('saveHole').disabled = true;
+      $('undo').disabled = true;
+      return;
+    }
+
+    if(!setup){
+      inputs.appendChild(document.createTextNode('Set teams in Match Setup before entering scores.'));
+      $('saveHole').disabled = true;
+      $('undo').disabled = true;
+      return;
+    }
+
+    $('saveHole').disabled = false;
+    $('undo').disabled = false;
+
+    const key = `h${hole}`;
+    const existing = (state.matches[m].holes[key] && state.matches[m].holes[key].scores)
+      ? state.matches[m].holes[key].scores
+      : {};
+
+    const order = [...setup.team1, ...setup.team2];
+    order.forEach(name=>{
+      const row = document.createElement('div');
+      row.className = 'player-input';
+      const label = document.createElement('span');
+      label.textContent = name;
+      const sel = document.createElement('select');
+      sel.id = `score_${name}`;
+      sel.appendChild(option('', ''));
+      for(let v=1; v<=15; v++) sel.appendChild(option(String(v), String(v)));
+      if(existing[name] != null) sel.value = String(existing[name]);
+      row.appendChild(label);
+      row.appendChild(sel);
+      inputs.appendChild(row);
+    });
+  }
+
+  function loadHole(){
+    $('msg').textContent='';
+    renderEntry();
+  }
+
+  function collectScores(){
+    const m = current();
+    const match = state.matches[m];
+    if(!match.setup) throw new Error('Teams not set.');
+    if(!canAccessMatch(m)) throw new Error('This match is locked.');
+
+    const hole = Number($('hole').value);
+    const players = [...match.setup.team1, ...match.setup.team2];
+    const scores = {};
+
+    for(const p of players){
+      const sel = $('score_' + p);
+      if(!sel) throw new Error('Entry not ready.');
+      const val = (sel.value || '').trim();
+      if(val==='') throw new Error('All 4 scores are required.');
+      const n = Number(val);
+      if(!Number.isFinite(n) || n<1 || n>15) throw new Error('Scores must be 1–15.');
+      scores[p] = n;
+    }
+    return {hole, scores};
+  }
+
+  function saveHole(){
+    try{
+      $('msg').textContent='';
+      const m = current();
+      const {hole, scores} = collectScores();
+      const key = `h${hole}`;
+
+      const prev = state.matches[m].holes[key]
+        ? JSON.parse(JSON.stringify(state.matches[m].holes[key]))
+        : null;
+
+      lastAction = {match: m, key, prev};
+      state.matches[m].holes[key] = {scores, updatedAt: new Date().toISOString()};
+      saveState();
+
+      $('msg').textContent='Saved.';
+
+      // advance to next hole
+      if(hole < 9){ $('hole').value = String(hole+1); }
+
+      renderEntry();
+      renderBoard();
+
+      // if match complete, advance to next match
+      advanceIfComplete();
+
+      setTimeout(()=> $('msg').textContent='', 1200);
+    }catch(e){
+      $('msg').textContent = e.message;
+    }
+  }
+
+  function undo(){
+    if(!lastAction){ $('msg').textContent='Nothing to undo.'; setTimeout(()=> $('msg').textContent='', 900); return; }
+    const {match, key, prev} = lastAction;
+    if(prev) state.matches[match].holes[key] = prev;
+    else delete state.matches[match].holes[key];
+    lastAction = null;
+    saveState();
+    $('msg').textContent='Undone.';
+    renderEntry();
+    renderBoard();
+    setTimeout(()=> $('msg').textContent='', 1000);
+  }
+
+  // Compute points for a single match
+  function computeMatchPoints(matchId){
+    const match = state.matches[matchId];
+    if(!match || !match.setup) return null;
+    const setup = match.setup;
+
+    let team1Pts = 0, team2Pts = 0;
+    const holes = [];
+
+    for(let h=1; h<=9; h++){
+      const key = `h${h}`;
+      const entry = match.holes[key];
+      if(!entry || !entry.scores){ holes.push({h, status:'-', t1:null, t2:null}); continue; }
+      const s = entry.scores;
+      const t1 = (s[setup.team1[0]]||0) + (s[setup.team1[1]]||0);
+      const t2 = (s[setup.team2[0]]||0) + (s[setup.team2[1]]||0);
+      let win = 'T';
+      if(t1 < t2){ team1Pts += 1; win = '1'; }
+      else if(t2 < t1){ team2Pts += 1; win = '2'; }
+      holes.push({h, status:win, t1, t2});
+    }
+
+    return {team1Pts, team2Pts, holes, setup};
+  }
+
+  // Compute cumulative individual leaderboard across all matches
+  function computeIndividualLeaderboard(){
+    const playerPoints = {};
+    PLAYERS.forEach(p => playerPoints[p] = 0);
+
+    for(let m=1; m<=6; m++){
+      const mp = computeMatchPoints(m);
+      if(!mp) continue;
+      const {setup, holes} = mp;
+
+      holes.forEach(x=>{
+        if(x.status === '1'){
+          playerPoints[setup.team1[0]] += 1;
+          playerPoints[setup.team1[1]] += 1;
+        } else if(x.status === '2'){
+          playerPoints[setup.team2[0]] += 1;
+          playerPoints[setup.team2[1]] += 1;
         }
-        row.appendChild(name);
-        row.appendChild(sel);
-        inputsDiv.appendChild(row);
       });
     }
 
-    function recomputeAndRenderTotals(){
-      const totals = {};
-      PLAYERS.forEach(p=>totals[p]=0);
-      Object.values(holesCache).forEach(doc=>{
-        const s = doc.scores || {};
-        PLAYERS.forEach(p=>{
-          const v = Number(s[p]);
-          if(!Number.isNaN(v)) totals[p]+=v;
-        });
-      });
-      const arr = Object.entries(totals).map(([player,total])=>({player,total}));
-      arr.sort((a,b)=>a.total - b.total);
-      
-      const ranks = {};
-      let rank = 1;
-      for(let i=0;i<arr.length;i++){
-        if(i>0 && arr[i].total !== arr[i-1].total) rank = i+1;
-        ranks[arr[i].player] = rank;
-      }
-      
-      const topScore = arr[0].total;
-      const topCount = arr.filter(x=>x.total===topScore).length;
+    return Object.entries(playerPoints)
+      .sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
+  }
 
-      totalsDiv.innerHTML='';
-      arr.forEach(a=>{
-        const row = document.createElement('div');
-        row.className='player-row';
-        let displayRank = ranks[a.player];
-        if(displayRank === 1 && topCount>1) displayRank = 'T1';
-        row.innerHTML = `
-          <div><div style="font-weight:600">${a.player}</div><div class="muted small">Total</div></div>
-          <div style="text-align:right"><div style="font-weight:700">${a.total}</div><div class="muted small">${displayRank}</div></div>
-        `;
-        totalsDiv.appendChild(row);
-      });
-    }
+  function renderBoard(){
+    const wrap = $('boardBody');
+    wrap.innerHTML='';
 
-    function startRealtime(){
-      HOLES_COL.onSnapshot(snapshot=>{
-        snapshot.docChanges().forEach(change=>{
-          const id = change.doc.id;
-          const data = change.doc.data();
-          if(change.type === 'removed') delete holesCache[id];
-          else holesCache[id] = data;
-        });
-        recomputeAndRenderTotals();
-        renderInputs();
-      }, err => {
-        console.error("Firestore error:", err);
-        messageEl.textContent = "Connection error. Check console.";
-      });
-    }
+    // ---- Individual leaderboard (cumulative across matches) ----
+    const leaderboard = document.createElement('div');
+    leaderboard.style.marginBottom = '12px';
 
-    submitBtn.addEventListener('click', async ()=>{
-      try{
-        messageEl.textContent='Saving...';
-        const round = Number(roundSelect.value);
-        const hole = Number(holeSelect.value);
-        const key = holeKey(round,hole);
-        const scores = {};
-        PLAYERS.forEach(p=>{
-          const v = document.getElementById('in_'+p).value;
-          if(!v) throw new Error("Please enter scores for everyone.");
-          scores[p] = Number(v);
-        });
+    const lbTitle = document.createElement('div');
+    lbTitle.style.fontWeight = '800';
+    lbTitle.style.marginBottom = '6px';
+    lbTitle.textContent = 'Individual Leaderboard (cumulative points)';
+    leaderboard.appendChild(lbTitle);
 
-        const prev = holesCache[key] ? {...holesCache[key]} : null;
-        lastAction = {key, prev};
+    const lbTable = document.createElement('table');
+    const lbHead = document.createElement('thead');
+    const lbHr = document.createElement('tr');
+    ['Rank','Player','Points'].forEach(t=>{ const th=document.createElement('th'); th.textContent=t; lbHr.appendChild(th); });
+    lbHead.appendChild(lbHr);
+    lbTable.appendChild(lbHead);
 
-        await HOLES_COL.doc(key).set({
-          round, hole, scores, 
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        messageEl.textContent = 'Saved.';
-        let nextHole = hole + 1;
-        let nextRound = round;
-        if(nextHole > 18){ nextHole = 1; nextRound = Math.min(3, round + 1); }
-        roundSelect.value = nextRound;
-        holeSelect.value = nextHole;
-        renderInputs();
-        setTimeout(()=>messageEl.textContent='', 2000);
-      } catch(e){
-        messageEl.textContent = e.message;
-      }
+    const lbBody = document.createElement('tbody');
+    const rows = computeIndividualLeaderboard();
+    rows.forEach(([name,points], idx)=>{
+      const tr = document.createElement('tr');
+      const tdR = document.createElement('td'); tdR.textContent = String(idx+1);
+      const tdN = document.createElement('td'); tdN.textContent = name; tdN.style.textAlign='left';
+      const tdP = document.createElement('td'); tdP.textContent = String(points);
+      tr.appendChild(tdR); tr.appendChild(tdN); tr.appendChild(tdP);
+      lbBody.appendChild(tr);
     });
+    lbTable.appendChild(lbBody);
+    leaderboard.appendChild(lbTable);
+    wrap.appendChild(leaderboard);
+    // ----------------------------------------------------------
 
-    undoBtn.addEventListener('click', async ()=>{
-      if(!lastAction) return;
-      const {key, prev} = lastAction;
-      if(prev) await HOLES_COL.doc(key).set(prev);
-      else await HOLES_COL.doc(key).delete();
-      lastAction = null;
-      messageEl.textContent = 'Undone.';
-    });
+    // Match summaries (all matches)
+    const summaryTitle = document.createElement('div');
+    summaryTitle.style.fontWeight = '800';
+    summaryTitle.style.margin = '6px 0';
+    summaryTitle.textContent = 'Matches';
+    wrap.appendChild(summaryTitle);
 
-    function renderScorecards(){
-      scorecardsEl.innerHTML = '';
-      COURSES.forEach(c=>{
-        const container = document.createElement('div');
-        container.style.marginBottom='20px';
-        container.innerHTML = `<h4>${c.name} — Round ${c.round}</h4>`;
-        const table = document.createElement('table');
-        table.innerHTML = `<thead><tr><th>Hole</th>${PLAYERS.map(p=>`<th>${p}</th>`).join('')}</tr></thead>`;
+    for(let m=1; m<=6; m++){
+      const mp = computeMatchPoints(m);
+      const card = document.createElement('div');
+      card.className = 'notice';
+      card.style.marginBottom = '10px';
+
+      const top = document.createElement('div');
+      top.className = 'flex-between';
+
+      const left = document.createElement('div');
+      left.innerHTML = `<strong>Match ${m}</strong> ${m===current()?'<span class="small muted">(current)</span>':''}`;
+
+      const right = document.createElement('div');
+      right.className = 'small muted';
+      right.textContent = matchComplete(m) ? 'Complete' : `${holesSavedCount(m)}/9 holes saved`;
+
+      top.appendChild(left); top.appendChild(right);
+      card.appendChild(top);
+
+      if(!mp){
+        const t = document.createElement('div');
+        t.className = 'small muted';
+        t.style.marginTop='6px';
+        t.textContent = 'Teams not set yet.';
+        card.appendChild(t);
+      } else {
+        const setup = mp.setup;
+        const line = document.createElement('div');
+        line.style.marginTop='6px';
+        line.className='small';
+        line.textContent = `Team 1 (${setup.team1.join(' + ')}) points: ${mp.team1Pts}  |  Team 2 (${setup.team2.join(' + ')}) points: ${mp.team2Pts}`;
+        card.appendChild(line);
+
+        // Hole pills
+        const pills = document.createElement('div');
+        pills.className = 'pillrow';
+        mp.holes.forEach(x=>{
+          const p = document.createElement('div');
+          p.className = 'pill ' + (x.status==='1'?'win1':(x.status==='2'?'win2':''));
+          p.textContent = (x.status==='-'?'-':(x.status==='T'?'T':x.status));
+          p.title = `Match ${m} • Hole ${x.h}`;
+          pills.appendChild(p);
+        });
+        card.appendChild(pills);
+
+        // Detail table
+        const tbl = document.createElement('table');
+        tbl.style.marginTop='8px';
+        const thead = document.createElement('thead');
+        const hr = document.createElement('tr');
+        ['Hole','Team 1 total','Team 2 total','Point'].forEach(t=>{ const th=document.createElement('th'); th.textContent=t; hr.appendChild(th); });
+        thead.appendChild(hr);
+        tbl.appendChild(thead);
+
         const tbody = document.createElement('tbody');
-        for(let i=1;i<=18;i++){
-          const key = holeKey(c.round,i);
-          const data = holesCache[key] || {};
-          const row = document.createElement('tr');
-          row.innerHTML = `<td>${i}</td>` + PLAYERS.map(p=>`<td>${(data.scores && data.scores[p]) || ''}</td>`).join('');
-          tbody.appendChild(row);
-        }
-        table.appendChild(tbody);
-        container.appendChild(table);
-        scorecardsEl.appendChild(container);
-      });
+        mp.holes.forEach(x=>{
+          const tr = document.createElement('tr');
+          const tdH = document.createElement('td'); tdH.textContent = String(x.h);
+          const td1 = document.createElement('td'); td1.textContent = (x.t1==null?'-':String(x.t1));
+          const td2 = document.createElement('td'); td2.textContent = (x.t2==null?'-':String(x.t2));
+          const tdW = document.createElement('td');
+          tdW.textContent = (x.status==='1'?'Team 1':(x.status==='2'?'Team 2':(x.status==='T'?'Tie':'-')));
+          tr.appendChild(tdH); tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(tdW);
+          tbody.appendChild(tr);
+        });
+        tbl.appendChild(tbody);
+        card.appendChild(tbl);
+      }
+
+      // Jump button (only allow jumping to current or earlier matches; future matches locked)
+      const btnRow = document.createElement('div');
+      btnRow.className = 'row';
+      btnRow.style.marginTop = '10px';
+      const jump = document.createElement('button');
+      jump.textContent = (m===current()) ? 'Edit current match' : 'View / edit this match';
+      const allowed = (m <= current()) && canAccessMatch(m);
+      jump.disabled = !allowed;
+      jump.addEventListener('click', ()=>{ setCurrentMatch(m); show('setup'); });
+      btnRow.appendChild(jump);
+      card.appendChild(btnRow);
+
+      wrap.appendChild(card);
     }
+  }
 
-    document.getElementById('btn-entry').addEventListener('click', ()=>{
-      scorecardsPage.style.display='none';
-      entryPage.style.display='flex';
-    });
+  function show(sectionId){
+    $('setup').classList.add('hidden');
+    $('entry').classList.add('hidden');
+    $('board').classList.add('hidden');
+    $(sectionId).classList.remove('hidden');
+  }
 
-    document.getElementById('btn-scorecards').addEventListener('click', ()=>{
-      entryPage.style.display='none';
-      scorecardsPage.style.display='block';
-      renderScorecards();
-    });
+  function renderAll(){
+    renderSetup();
+    renderEntry();
+    renderBoard();
+  }
 
-    // Init
-    initSelectors();
-    roundSelect.value = 1;
-    holeSelect.value = 1;
-    roundSelect.onchange = renderInputs;
-    holeSelect.onchange = renderInputs;
-    startRealtime();
+  // Navigation
+  $('nav-setup').addEventListener('click', ()=>{ show('setup'); renderSetup(); });
+  $('nav-entry').addEventListener('click', ()=>{ show('entry'); renderEntry(); });
+  $('nav-board').addEventListener('click', ()=>{ show('board'); renderBoard(); });
 
-  </script>
+  // Setup actions
+  $('saveSetup').addEventListener('click', saveTeams);
+  $('clearSetup').addEventListener('click', clearTeams);
+
+  // Entry actions
+  $('hole').addEventListener('change', renderEntry);
+  $('loadHole').addEventListener('click', loadHole);
+  $('saveHole').addEventListener('click', saveHole);
+  $('undo').addEventListener('click', undo);
+
+  // Board
+  $('refresh').addEventListener('click', renderBoard);
+
+  // Init
+  loadState();
+  renderHoleSelect();
+  renderAll();
+  show('setup');
+</script>
 </body>
 </html>
