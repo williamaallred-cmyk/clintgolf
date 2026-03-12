@@ -34,6 +34,7 @@
     .kpi{display:flex;gap:10px;flex-wrap:wrap}
     .kpi .box{padding:8px 10px;border-radius:10px;border:1px solid #e6e6e6;background:#fff}
   </style>
+  <link rel="icon" href="data:,">
 </head>
 <body>
   <header>
@@ -42,8 +43,9 @@
       <div class="small muted">Lowest team total wins each hole (1 point). Ties award 0 points. No carryovers.</div>
     </div>
     <div class="controls">
+      <!-- NOTE: no button starts as "primary" anymore -->
       <button id="nav-setup">Match Setup</button>
-      <button id="nav-entry" class="primary">Score Entry</button>
+      <button id="nav-entry">Score Entry</button>
       <button id="nav-board">Scoreboard</button>
     </div>
   </header>
@@ -229,7 +231,7 @@
     });
   }
 
-  // ✅ NEW: Reset everything (Firestore + local fallback)
+  // ✅ Reset everything (Firestore + local fallback)
   async function resetTournament(){
     const sure = confirm(
       "Reset Tournament?\n\nThis will clear ALL matches, scores, and points for everyone (live sync).\n\nPress OK to reset."
@@ -237,17 +239,12 @@
     if(!sure) return;
 
     try{
-      // Build fresh state
       const fresh = { currentMatch: 1, matches: {} };
       for(let m=1;m<=6;m++) fresh.matches[m] = blankMatch();
 
-      // Write to Firestore (this triggers onSnapshot on all devices)
       await setDoc(STATE_REF, fresh);
-
-      // Clear local fallback too
       try{ localStorage.removeItem(LOCAL_KEY); }catch(e){}
 
-      // Update local view immediately (snapshot will also refresh)
       state = fresh;
       lastAction = null;
       renderAll();
@@ -263,6 +260,15 @@
   // DOM helpers
   function $(id){ return document.getElementById(id); }
   function option(value, text){ const o=document.createElement('option'); o.value=value; o.textContent=text; return o; }
+
+  // ✅ NEW: highlight only the active nav button
+  function setActiveNav(activeId){
+    ['nav-setup','nav-entry','nav-board'].forEach(id=>{
+      const btn = document.getElementById(id);
+      if(!btn) return;
+      btn.classList.toggle('primary', id === activeId);
+    });
+  }
 
   function fillPlayerSelect(sel){
     sel.innerHTML='';
@@ -675,11 +681,16 @@
     }
   }
 
+  // ✅ UPDATED: show() now also sets which nav button is blue
   function show(sectionId){
     $('setup').classList.add('hidden');
     $('entry').classList.add('hidden');
     $('board').classList.add('hidden');
     $(sectionId).classList.remove('hidden');
+
+    if(sectionId === 'setup') setActiveNav('nav-setup');
+    if(sectionId === 'entry') setActiveNav('nav-entry');
+    if(sectionId === 'board') setActiveNav('nav-board');
   }
 
   function renderAll(){
@@ -713,7 +724,7 @@
     startLiveSync();
     renderHoleSelect();
     renderAll();
-    show('setup');
+    show('setup'); // this will also turn the Match Setup button blue
   })();
 </script>
 </body>
