@@ -43,7 +43,6 @@
       <div class="small muted">Lowest team total wins each hole (1 point). Ties award 0 points. No carryovers.</div>
     </div>
     <div class="controls">
-      <!-- NOTE: no button starts as "primary" anymore -->
       <button id="nav-setup">Match Setup</button>
       <button id="nav-entry">Score Entry</button>
       <button id="nav-board">Scoreboard</button>
@@ -54,7 +53,7 @@
   <section id="setup" class="panel">
     <div class="flex-between">
       <strong id="setupTitle">Match Setup</strong>
-      <span class="small muted">Set teams for the current match, then enter Hole 1–9 scores.</span>
+      <span class="small muted">Set teams for the current match, then enter Hole scores.</span>
     </div>
 
     <div id="lockBanner" class="notice hidden" style="margin-top:10px">
@@ -91,7 +90,7 @@
     </div>
   </section>
 
-  <!-- SCORE ENTRY (Holes 1–9, current match) -->
+  <!-- SCORE ENTRY (Holes, current match) -->
   <section id="entry" class="panel hidden">
     <div class="row">
       <label for="hole">Hole</label>
@@ -109,7 +108,7 @@
     </div>
 
     <div class="small muted" style="margin-top:6px">
-      Tip: Save Hole 1 → auto-advances to Hole 2. When all 9 holes are saved, the app moves you to the next match.
+      Tip: Save Hole 1 → auto-advances to next hole. When all 9 holes are saved, the app moves you to the next match.
     </div>
   </section>
 
@@ -194,7 +193,6 @@
       }
     }catch(e){
       console.error("loadState error:", e);
-      // fallback to local storage so you can keep playing
       const raw = localStorage.getItem(LOCAL_KEY);
       if(raw){
         try{ state = JSON.parse(raw) || state; }catch(e2){ console.error(e2); }
@@ -205,11 +203,10 @@
 
   async function saveState(){
     try{
-      if(isApplyingRemote) return; // prevent feedback loop
+      if(isApplyingRemote) return;
       await setDoc(STATE_REF, state);
     }catch(e){
       console.error("saveState error:", e);
-      // fallback locally so no data is lost
       try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); }catch(e2){ console.error(e2); }
     }
   }
@@ -218,9 +215,6 @@
     if(unsubscribeLive) unsubscribeLive();
     unsubscribeLive = onSnapshot(STATE_REF, (snap) => {
       if(!snap.exists()) return;
-
-      console.log("🔥 LIVE UPDATE RECEIVED", new Date().toLocaleTimeString());
-
       isApplyingRemote = true;
       state = snap.data();
       ensureMatches();
@@ -231,7 +225,7 @@
     });
   }
 
-  // ✅ Reset everything (Firestore + local fallback)
+  // Reset everything (Firestore + local fallback)
   async function resetTournament(){
     const sure = confirm(
       "Reset Tournament?\n\nThis will clear ALL matches, scores, and points for everyone (live sync).\n\nPress OK to reset."
@@ -261,7 +255,7 @@
   function $(id){ return document.getElementById(id); }
   function option(value, text){ const o=document.createElement('option'); o.value=value; o.textContent=text; return o; }
 
-  // ✅ NEW: highlight only the active nav button
+  // Highlight only the active nav button
   function setActiveNav(activeId){
     ['nav-setup','nav-entry','nav-board'].forEach(id=>{
       const btn = document.getElementById(id);
@@ -274,6 +268,14 @@
     sel.innerHTML='';
     sel.appendChild(option('', '--'));
     PLAYERS.forEach(p=> sel.appendChild(option(p,p)));
+  }
+
+  // ✅ NEW: Matches 2, 4, 6 should display holes 10–18 (but still store as h1..h9)
+  function holeOffsetForMatch(matchId){
+    return (matchId === 2 || matchId === 4 || matchId === 6) ? 9 : 0;
+  }
+  function displayHoleNumber(matchId, holeIndex1to9){
+    return holeIndex1to9 + holeOffsetForMatch(matchId);
   }
 
   function holesSavedCount(matchId){
@@ -303,6 +305,8 @@
     if(matchComplete(m) && m < 6){
       state.currentMatch = m + 1;
       saveState();
+      // ensure hole dropdown relabels for the new match
+      renderHoleSelect();
       show('setup');
       renderAll();
     }
@@ -310,7 +314,9 @@
 
   function renderSetup(){
     const m = current();
-    $('setupTitle').textContent = `Match ${m} Setup (Holes 1–9)`;
+    const startHole = displayHoleNumber(m, 1);
+    const endHole   = displayHoleNumber(m, 9);
+    $('setupTitle').textContent = `Match ${m} Setup (Holes ${startHole}–${endHole})`;
     $('matchNum').textContent = String(m);
 
     const locked = !canAccessMatch(m);
@@ -383,9 +389,16 @@
   }
 
   function renderHoleSelect(){
+    const m = current();
     const sel = $('hole');
+    const prevVal = sel.value || '1';
     sel.innerHTML='';
-    for(let h=1; h<=9; h++) sel.appendChild(option(String(h), `Hole ${h}`));
+    for(let h=1; h<=9; h++){
+      const disp = displayHoleNumber(m, h);
+      sel.appendChild(option(String(h), `Hole ${disp}`));
+    }
+    // keep selection if possible
+    sel.value = prevVal;
   }
 
   function renderEntry(){
@@ -393,11 +406,12 @@
     const locked = !canAccessMatch(m);
 
     const setup = state.matches[m].setup;
-    const hole = Number($('hole').value || 1);
+    const holeIndex = Number($('hole').value || 1); // 1..9 (internal)
+    const holeDisplay = displayHoleNumber(m, holeIndex);
 
     $('entryLabel').textContent = setup
-      ? `Match ${m} — Hole ${hole}  |  Team 1: ${setup.team1.join(' + ')}  vs  Team 2: ${setup.team2.join(' + ')}`
-      : `Match ${m} — Hole ${hole}  |  Teams not set yet`;
+      ? `Match ${m} — Hole ${holeDisplay}  |  Team 1: ${setup.team1.join(' + ')}  vs  Team 2: ${setup.team2.join(' + ')}`
+      : `Match ${m} — Hole ${holeDisplay}  |  Teams not set yet`;
 
     const inputs = $('inputs');
     inputs.innerHTML='';
@@ -419,7 +433,7 @@
     $('saveHole').disabled = false;
     $('undo').disabled = false;
 
-    const key = `h${hole}`;
+    const key = `h${holeIndex}`;
     const existing = (state.matches[m].holes[key] && state.matches[m].holes[key].scores)
       ? state.matches[m].holes[key].scores
       : {};
@@ -452,7 +466,7 @@
     if(!match.setup) throw new Error('Teams not set.');
     if(!canAccessMatch(m)) throw new Error('This match is locked.');
 
-    const hole = Number($('hole').value);
+    const holeIndex = Number($('hole').value); // 1..9
     const players = [...match.setup.team1, ...match.setup.team2];
     const scores = {};
 
@@ -465,15 +479,15 @@
       if(!Number.isFinite(n) || n<1 || n>15) throw new Error('Scores must be 1–15.');
       scores[p] = n;
     }
-    return {hole, scores};
+    return {holeIndex, scores};
   }
 
   function saveHole(){
     try{
       $('msg').textContent='';
       const m = current();
-      const {hole, scores} = collectScores();
-      const key = `h${hole}`;
+      const {holeIndex, scores} = collectScores();
+      const key = `h${holeIndex}`;
 
       const prev = state.matches[m].holes[key]
         ? JSON.parse(JSON.stringify(state.matches[m].holes[key]))
@@ -485,7 +499,8 @@
 
       $('msg').textContent='Saved.';
 
-      if(hole < 9){ $('hole').value = String(hole+1); }
+      // advance to next hole (internal index)
+      if(holeIndex < 9){ $('hole').value = String(holeIndex+1); }
 
       renderEntry();
       renderBoard();
@@ -511,6 +526,7 @@
     setTimeout(()=> $('msg').textContent='', 1000);
   }
 
+  // Compute points for a single match
   function computeMatchPoints(matchId){
     const match = state.matches[matchId];
     if(!match || !match.setup) return null;
@@ -535,6 +551,7 @@
     return {team1Pts, team2Pts, holes, setup};
   }
 
+  // Compute cumulative individual leaderboard across all matches
   function computeIndividualLeaderboard(){
     const playerPoints = {};
     PLAYERS.forEach(p => playerPoints[p] = 0);
@@ -563,6 +580,7 @@
     const wrap = $('boardBody');
     wrap.innerHTML='';
 
+    // Individual leaderboard
     const leaderboard = document.createElement('div');
     leaderboard.style.marginBottom = '12px';
 
@@ -593,6 +611,7 @@
     leaderboard.appendChild(lbTable);
     wrap.appendChild(leaderboard);
 
+    // Match summaries
     const summaryTitle = document.createElement('div');
     summaryTitle.style.fontWeight = '800';
     summaryTitle.style.margin = '6px 0';
@@ -632,17 +651,19 @@
         line.textContent = `Team 1 (${setup.team1.join(' + ')}) points: ${mp.team1Pts}  |  Team 2 (${setup.team2.join(' + ')}) points: ${mp.team2Pts}`;
         card.appendChild(line);
 
+        // Hole pills
         const pills = document.createElement('div');
         pills.className = 'pillrow';
         mp.holes.forEach(x=>{
           const p = document.createElement('div');
           p.className = 'pill ' + (x.status==='1'?'win1':(x.status==='2'?'win2':''));
           p.textContent = (x.status==='-'?'-':(x.status==='T'?'T':x.status));
-          p.title = `Match ${m} • Hole ${x.h}`;
+          p.title = `Match ${m} • Hole ${displayHoleNumber(m, x.h)}`;
           pills.appendChild(p);
         });
         card.appendChild(pills);
 
+        // Detail table
         const tbl = document.createElement('table');
         tbl.style.marginTop='8px';
         const thead = document.createElement('thead');
@@ -654,7 +675,7 @@
         const tbody = document.createElement('tbody');
         mp.holes.forEach(x=>{
           const tr = document.createElement('tr');
-          const tdH = document.createElement('td'); tdH.textContent = String(x.h);
+          const tdH = document.createElement('td'); tdH.textContent = String(displayHoleNumber(m, x.h));
           const td1 = document.createElement('td'); td1.textContent = (x.t1==null?'-':String(x.t1));
           const td2 = document.createElement('td'); td2.textContent = (x.t2==null?'-':String(x.t2));
           const tdW = document.createElement('td');
@@ -673,7 +694,11 @@
       jump.textContent = (m===current()) ? 'Edit current match' : 'View / edit this match';
       const allowed = (m <= current()) && canAccessMatch(m);
       jump.disabled = !allowed;
-      jump.addEventListener('click', ()=>{ setCurrentMatch(m); show('setup'); });
+      jump.addEventListener('click', ()=>{
+        setCurrentMatch(m);
+        renderHoleSelect(); // relabel holes for this match
+        show('setup');
+      });
       btnRow.appendChild(jump);
       card.appendChild(btnRow);
 
@@ -681,7 +706,7 @@
     }
   }
 
-  // ✅ UPDATED: show() now also sets which nav button is blue
+  // UPDATED: show() sets active nav button blue
   function show(sectionId){
     $('setup').classList.add('hidden');
     $('entry').classList.add('hidden');
@@ -722,9 +747,9 @@
   (async function init(){
     await loadState();
     startLiveSync();
-    renderHoleSelect();
+    renderHoleSelect(); // labels depend on match #
     renderAll();
-    show('setup'); // this will also turn the Match Setup button blue
+    show('setup');
   })();
 </script>
 </body>
