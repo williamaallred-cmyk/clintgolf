@@ -42,7 +42,7 @@
       <h1>Golf Match Play — 6 Matches</h1>
       <div class="small muted">
         Lowest team total wins each hole (1 point). Ties award 0 points. No carryovers.
-        <br><strong>Money:</strong> Win a hole = +$10 per winning player, -$10 per losing player. Tie = $0.
+        <br><strong>Money:</strong> Win a match = +$10 per winning player, -$10 per losing player. Tied match = $0.
       </div>
     </div>
     <div class="controls">
@@ -52,7 +52,6 @@
     </div>
   </header>
 
-  <!-- MATCH SETUP -->
   <section id="setup" class="panel">
     <div class="flex-between">
       <strong id="setupTitle">Match Setup</strong>
@@ -89,7 +88,6 @@
     </div>
   </section>
 
-  <!-- SCORE ENTRY -->
   <section id="entry" class="panel hidden">
     <div class="row">
       <label for="hole">Hole</label>
@@ -111,7 +109,6 @@
     </div>
   </section>
 
-  <!-- SCOREBOARD -->
   <section id="board" class="panel hidden">
     <div class="flex-between">
       <strong>Scoreboard</strong>
@@ -122,7 +119,7 @@
 
 <script type="module">
   const PLAYERS = ['Tucker','Clint','Brian','Jeff'];
-  const MONEY_PER_PLAYER_PER_HOLE = 10;
+  const MONEY_PER_PLAYER_PER_MATCH = 10;
   const LOCAL_KEY = 'golf_matchplay_6matches_front9_v1';
 
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -333,7 +330,7 @@
     const prev = sel.value || '1';
     sel.innerHTML='';
     for(let h=1; h<=9; h++){
-      sel.appendChild(option(String(h), `Hole ${displayHoleNumber(m,h)}`));
+      sel.appendChild(option(String(h), `Hole ${displayHoleNumber(m, h)}`));
     }
     sel.value = prev;
   }
@@ -376,16 +373,13 @@
     [...setup.team1, ...setup.team2].forEach(name=>{
       const row = document.createElement('div');
       row.className = 'player-input';
-
       const label = document.createElement('span');
       label.textContent = name;
-
       const sel = document.createElement('select');
       sel.id = `score_${name}`;
       sel.appendChild(option('', ''));
       for(let v=1; v<=15; v++) sel.appendChild(option(String(v), String(v)));
       if(existing[name] != null) sel.value = String(existing[name]);
-
       row.appendChild(label);
       row.appendChild(sel);
       inputs.appendChild(row);
@@ -476,7 +470,7 @@
     return {team1Pts, team2Pts, holes, setup};
   }
 
-  // ✅ Points + Money totals per player (this is what drives the Money column)
+  // ✅ Money now settles by MATCH, not by hole
   function computePlayerTotals(){
     const totals = {};
     PLAYERS.forEach(p => totals[p] = { points: 0, money: 0 });
@@ -485,25 +479,32 @@
       const mp = computeMatchPoints(m);
       if(!mp) continue;
 
-      const {setup, holes} = mp;
+      const {setup, holes, team1Pts, team2Pts} = mp;
 
+      // points still earned by hole
       holes.forEach(x=>{
         if(x.status === '1'){
           totals[setup.team1[0]].points += 1;
           totals[setup.team1[1]].points += 1;
-          totals[setup.team1[0]].money  += MONEY_PER_PLAYER_PER_HOLE;
-          totals[setup.team1[1]].money  += MONEY_PER_PLAYER_PER_HOLE;
-          totals[setup.team2[0]].money  -= MONEY_PER_PLAYER_PER_HOLE;
-          totals[setup.team2[1]].money  -= MONEY_PER_PLAYER_PER_HOLE;
         } else if(x.status === '2'){
           totals[setup.team2[0]].points += 1;
           totals[setup.team2[1]].points += 1;
-          totals[setup.team2[0]].money  += MONEY_PER_PLAYER_PER_HOLE;
-          totals[setup.team2[1]].money  += MONEY_PER_PLAYER_PER_HOLE;
-          totals[setup.team1[0]].money  -= MONEY_PER_PLAYER_PER_HOLE;
-          totals[setup.team1[1]].money  -= MONEY_PER_PLAYER_PER_HOLE;
         }
       });
+
+      // money earned by match result
+      if(team1Pts > team2Pts){
+        totals[setup.team1[0]].money += MONEY_PER_PLAYER_PER_MATCH;
+        totals[setup.team1[1]].money += MONEY_PER_PLAYER_PER_MATCH;
+        totals[setup.team2[0]].money -= MONEY_PER_PLAYER_PER_MATCH;
+        totals[setup.team2[1]].money -= MONEY_PER_PLAYER_PER_MATCH;
+      } else if(team2Pts > team1Pts){
+        totals[setup.team2[0]].money += MONEY_PER_PLAYER_PER_MATCH;
+        totals[setup.team2[1]].money += MONEY_PER_PLAYER_PER_MATCH;
+        totals[setup.team1[0]].money -= MONEY_PER_PLAYER_PER_MATCH;
+        totals[setup.team1[1]].money -= MONEY_PER_PLAYER_PER_MATCH;
+      }
+      // tied match => $0
     }
     return totals;
   }
@@ -517,7 +518,7 @@
     const wrap = $('boardBody');
     wrap.innerHTML='';
 
-    // ---- Individual leaderboard (NOW includes Money column) ----
+    // Individual leaderboard
     const leaderboard = document.createElement('div');
     leaderboard.style.marginBottom = '12px';
 
@@ -530,10 +531,9 @@
     const totals = computePlayerTotals();
     const rows = Object.entries(totals)
       .map(([name, obj]) => [name, obj.points, obj.money])
-      .sort((a,b)=> (b[1]-a[1]) || (b[2]-a[2]) || a[0].localeCompare(b[0])); // points, then money
+      .sort((a,b)=> (b[1]-a[1]) || (b[2]-a[2]) || a[0].localeCompare(b[0]));
 
     const lbTable = document.createElement('table');
-
     const lbHead = document.createElement('thead');
     const lbHr = document.createElement('tr');
     ['Rank','Player','Points','Money'].forEach(t=>{
@@ -555,11 +555,10 @@
       lbBody.appendChild(tr);
     });
     lbTable.appendChild(lbBody);
-
     leaderboard.appendChild(lbTable);
     wrap.appendChild(leaderboard);
 
-    // ---- Matches section (kept, includes per-hole money text) ----
+    // Matches
     const summaryTitle = document.createElement('div');
     summaryTitle.style.fontWeight = '800';
     summaryTitle.style.margin = '6px 0';
@@ -593,11 +592,15 @@
         card.appendChild(t);
       } else {
         const setup = mp.setup;
-
         const line = document.createElement('div');
         line.style.marginTop='6px';
         line.className='small';
-        line.textContent = `Team 1 (${setup.team1.join(' + ')}) points: ${mp.team1Pts}  |  Team 2 (${setup.team2.join(' + ')}) points: ${mp.team2Pts}`;
+
+        let moneyText = '$0';
+        if(mp.team1Pts > mp.team2Pts) moneyText = `Team 1 +$${MONEY_PER_PLAYER_PER_MATCH} each / Team 2 -$${MONEY_PER_PLAYER_PER_MATCH} each`;
+        else if(mp.team2Pts > mp.team1Pts) moneyText = `Team 2 +$${MONEY_PER_PLAYER_PER_MATCH} each / Team 1 -$${MONEY_PER_PLAYER_PER_MATCH} each`;
+
+        line.textContent = `Team 1 (${setup.team1.join(' + ')}) points: ${mp.team1Pts}  |  Team 2 (${setup.team2.join(' + ')}) points: ${mp.team2Pts}  |  Match money: ${moneyText}`;
         card.appendChild(line);
 
         const tbl = document.createElement('table');
@@ -605,7 +608,7 @@
 
         const thead = document.createElement('thead');
         const hr = document.createElement('tr');
-        ['Hole','Team 1 total','Team 2 total','Point','Money'].forEach(t=>{
+        ['Hole','Team 1 total','Team 2 total','Point'].forEach(t=>{
           const th=document.createElement('th'); th.textContent=t; hr.appendChild(th);
         });
         thead.appendChild(hr);
@@ -617,17 +620,9 @@
           const tdH = document.createElement('td'); tdH.textContent = String(displayHoleNumber(m, x.h));
           const td1 = document.createElement('td'); td1.textContent = (x.t1==null?'-':String(x.t1));
           const td2 = document.createElement('td'); td2.textContent = (x.t2==null?'-':String(x.t2));
-
           const tdW = document.createElement('td');
           tdW.textContent = (x.status==='1'?'Team 1':(x.status==='2'?'Team 2':(x.status==='T'?'Tie':'-')));
-
-          const tdMoney = document.createElement('td');
-          if(x.status === '1') tdMoney.textContent = `T1 +$${MONEY_PER_PLAYER_PER_HOLE} ea / T2 -$${MONEY_PER_PLAYER_PER_HOLE} ea`;
-          else if(x.status === '2') tdMoney.textContent = `T2 +$${MONEY_PER_PLAYER_PER_HOLE} ea / T1 -$${MONEY_PER_PLAYER_PER_HOLE} ea`;
-          else if(x.status === 'T') tdMoney.textContent = '$0';
-          else tdMoney.textContent = '-';
-
-          tr.appendChild(tdH); tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(tdW); tr.appendChild(tdMoney);
+          tr.appendChild(tdH); tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(tdW);
           tbody.appendChild(tr);
         });
         tbl.appendChild(tbody);
