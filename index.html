@@ -99,7 +99,7 @@
       <div class="card">
         <strong>Bingo Bango Bongo</strong>
         <div class="small muted" style="margin-top:6px">
-          Placeholder for future code.
+          18 holes. Award 0, 1, 2, or 3 points to each player on each hole.
         </div>
       </div>
       <div class="card">
@@ -117,7 +117,7 @@
     </div>
 
     <div class="small muted" style="margin-top:12px">
-      <strong>Built now:</strong> Beach Match Play and Wolf.
+      <strong>Built now:</strong> Beach Match Play, Wolf, and Bingo Bango Bongo.
     </div>
   </section>
 
@@ -126,7 +126,7 @@
     <div class="notice">
       <strong id="placeholderTitle">This game is not built yet.</strong>
       <div class="small muted" style="margin-top:6px">
-        Home is ready, and Beach Match Play and Wolf are fully coded. You can add the other game logic later.
+        Home is ready, and Beach Match Play, Wolf, and Bingo Bango Bongo are fully coded. You can add the other game logic later.
       </div>
       <div class="row" style="margin-top:10px">
         <button id="backHome">Back to Home</button>
@@ -180,7 +180,7 @@
   ];
 
   const MONEY_PER_PLAYER_PER_MATCH = 10;
-  const LOCAL_KEY = 'golf_games_v2';
+  const LOCAL_KEY = 'golf_games_v3';
 
   const GAME_OPTIONS = {
     wolf: 'Wolf',
@@ -225,6 +225,10 @@
       currentHole: 1,
       order: [],
       holes: {}
+    },
+    bingoBangoBongo: {
+      currentHole: 1,
+      holes: {}
     }
   };
 
@@ -260,6 +264,14 @@
     if(!state.wolf.holes) state.wolf.holes = {};
     if(!state.wolf.currentHole || state.wolf.currentHole < 1 || state.wolf.currentHole > 18){
       state.wolf.currentHole = 1;
+    }
+
+    if(!state.bingoBangoBongo){
+      state.bingoBangoBongo = { currentHole: 1, holes: {} };
+    }
+    if(!state.bingoBangoBongo.holes) state.bingoBangoBongo.holes = {};
+    if(!state.bingoBangoBongo.currentHole || state.bingoBangoBongo.currentHole < 1 || state.bingoBangoBongo.currentHole > 18){
+      state.bingoBangoBongo.currentHole = 1;
     }
   }
 
@@ -346,7 +358,7 @@
 
   function navigateGameSection(sectionId){
     const game = currentGame();
-    if(game === 'beach_match_play' || game === 'wolf'){
+    if(game === 'beach_match_play' || game === 'wolf' || game === 'bingo_bango_bongo'){
       show(sectionId);
     } else {
       renderPlaceholder();
@@ -408,7 +420,7 @@
 
     renderAll();
 
-    if(game === 'beach_match_play' || game === 'wolf') show('setup');
+    if(game === 'beach_match_play' || game === 'wolf' || game === 'bingo_bango_bongo') show('setup');
     else show('placeholder');
   }
 
@@ -533,9 +545,7 @@
 
     lastAction = { game: 'beach_match_play', match: m, key, prev };
     beachState().matches[m].holes[key] = {scores, updatedAt: new Date().toISOString()};
-
     beachState().currentHole = holeIndex < 9 ? holeIndex + 1 : 9;
-
     saveState();
     renderAll();
     beachAdvanceIfComplete();
@@ -1295,26 +1305,294 @@
     wrap.appendChild(holeTable);
   }
 
+  // =================== BINGO BANGO BONGO ===================
+  function bbbState(){ return state.bingoBangoBongo; }
+  function bbbHoleKey(hole){ return `h${hole}`; }
+
+  function bbbReset(){
+    const sure = confirm("Reset Bingo Bango Bongo?\n\nThis clears all Bingo Bango Bongo hole points.");
+    if(!sure) return;
+    bbbState().holes = {};
+    bbbState().currentHole = 1;
+    lastAction = null;
+    saveState();
+    renderAll();
+    show('setup');
+  }
+
+  function bbbCollectHoleScores(){
+    const hole = Number($('bbb_hole').value);
+    const scores = {};
+
+    for(const p of selectedPlayers()){
+      const sel = $(`bbb_score_${p}`);
+      const val = sel.value;
+      if(val === '') throw new Error('Choose a point value for every player.');
+      const n = Number(val);
+      if(![0,1,2,3].includes(n)) throw new Error('Bingo Bango Bongo points must be 0, 1, 2, or 3.');
+      scores[p] = n;
+    }
+
+    return { hole, scores };
+  }
+
+  function bbbSaveHole(){
+    const { hole, scores } = bbbCollectHoleScores();
+    const key = bbbHoleKey(hole);
+    const prev = bbbState().holes[key] ? JSON.parse(JSON.stringify(bbbState().holes[key])) : null;
+    lastAction = { game: 'bingo_bango_bongo', key, prev };
+    bbbState().holes[key] = { scores, updatedAt: new Date().toISOString() };
+    bbbState().currentHole = hole < 18 ? hole + 1 : 18;
+    saveState();
+    renderAll();
+  }
+
+  function bbbUndo(){
+    if(!lastAction || lastAction.game !== 'bingo_bango_bongo') return;
+    const { key, prev } = lastAction;
+    if(prev) bbbState().holes[key] = prev;
+    else delete bbbState().holes[key];
+    lastAction = null;
+    saveState();
+    renderAll();
+  }
+
+  function bbbComputeTotals(){
+    const totals = {};
+    selectedPlayers().forEach(p => totals[p] = 0);
+
+    for(let h=1; h<=18; h++){
+      const entry = bbbState().holes[bbbHoleKey(h)];
+      if(!entry || !entry.scores) continue;
+      for(const p of selectedPlayers()){
+        totals[p] += Number(entry.scores[p] || 0);
+      }
+    }
+
+    return totals;
+  }
+
+  function renderBBBSetup(){
+    $('setupTitle').textContent = 'Bingo Bango Bongo Setup';
+    $('setupSubtitle').textContent = 'This game is ready. Use Score Entry to start entering points.';
+
+    const wrap = $('setupContent');
+    wrap.innerHTML = '';
+
+    const notice = document.createElement('div');
+    notice.className = 'notice';
+    notice.innerHTML = `<strong>Bingo Bango Bongo</strong><br>18 holes. Award each player 0, 1, 2, or 3 points on each hole.`;
+    wrap.appendChild(notice);
+
+    const playerBox = document.createElement('div');
+    playerBox.className = 'subtle';
+    playerBox.style.marginTop = '10px';
+    playerBox.innerHTML = `<strong>Players today:</strong> ${selectedPlayers().join(', ') || 'None selected'}`;
+    wrap.appendChild(playerBox);
+
+    const btnRow = document.createElement('div');
+    btnRow.className = 'row';
+    btnRow.style.marginTop = '10px';
+    btnRow.innerHTML = `
+      <button id="bbbReset" class="danger">Reset Bingo Bango Bongo</button>
+      <span class="muted">Current hole: ${bbbState().currentHole}</span>
+    `;
+    wrap.appendChild(btnRow);
+
+    $('bbbReset').addEventListener('click', bbbReset);
+  }
+
+  function renderBBBEntry(){
+    $('entryTitle').textContent = 'Bingo Bango Bongo Score Entry';
+    $('entrySubtitle').textContent = 'Enter 0, 1, 2, or 3 points for each player on the hole.';
+
+    const wrap = $('entryContent');
+    wrap.innerHTML = '';
+
+    if(!selectedPlayers().length){
+      const note = document.createElement('div');
+      note.className = 'notice';
+      note.textContent = 'Select players on Home first.';
+      wrap.appendChild(note);
+      return;
+    }
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<label for="bbb_hole">Hole</label><select id="bbb_hole"></select><span id="bbbMsg" class="muted"></span>`;
+    wrap.appendChild(row);
+
+    for(let h=1; h<=18; h++) $('bbb_hole').appendChild(option(String(h), `Hole ${h}`));
+    $('bbb_hole').value = String(bbbState().currentHole || 1);
+
+    const hole = Number($('bbb_hole').value || 1);
+
+    const title = document.createElement('div');
+    title.className = 'subtle';
+    title.style.marginBottom = '8px';
+    title.innerHTML = `<strong>Hole ${hole}</strong>`;
+    wrap.appendChild(title);
+
+    const existing = (bbbState().holes[bbbHoleKey(hole)] && bbbState().holes[bbbHoleKey(hole)].scores)
+      ? bbbState().holes[bbbHoleKey(hole)].scores
+      : {};
+
+    const inputs = document.createElement('div');
+    selectedPlayers().forEach(name=>{
+      const row = document.createElement('div');
+      row.className = 'player-input';
+
+      const span = document.createElement('span');
+      span.textContent = name;
+
+      const sel = document.createElement('select');
+      sel.id = `bbb_score_${name}`;
+      [0,1,2,3].forEach(v => sel.appendChild(option(String(v), String(v))));
+      sel.value = String(existing[name] ?? 0);
+
+      row.appendChild(span);
+      row.appendChild(sel);
+      inputs.appendChild(row);
+    });
+    wrap.appendChild(inputs);
+
+    const btnRow = document.createElement('div');
+    btnRow.className = 'row';
+    btnRow.style.marginTop = '10px';
+    btnRow.innerHTML = `<button id="bbbSaveHole" class="primary">Save Hole</button><button id="bbbUndo">Undo</button>`;
+    wrap.appendChild(btnRow);
+
+    $('bbb_hole').addEventListener('change', ()=>{
+      bbbState().currentHole = Number($('bbb_hole').value);
+      renderAll();
+    });
+
+    $('bbbSaveHole').addEventListener('click', ()=>{
+      try{
+        bbbSaveHole();
+        $('bbbMsg').textContent = 'Saved.';
+        setTimeout(()=> $('bbbMsg').textContent = '', 1200);
+      }catch(e){
+        $('bbbMsg').textContent = e.message;
+      }
+    });
+
+    $('bbbUndo').addEventListener('click', ()=>{
+      bbbUndo();
+      $('bbbMsg').textContent = 'Undone.';
+      setTimeout(()=> $('bbbMsg').textContent = '', 1000);
+    });
+
+    const tip = document.createElement('div');
+    tip.className = 'small muted';
+    tip.style.marginTop = '6px';
+    tip.textContent = 'Scoring options: 0, 1, 2, or 3 points. After you click Save Hole, the app automatically advances to the next hole.';
+    wrap.appendChild(tip);
+  }
+
+  function renderBBBBoard(){
+    $('boardTitle').textContent = 'Bingo Bango Bongo Scoreboard';
+
+    const wrap = $('boardContent');
+    wrap.innerHTML = '';
+
+    const totals = bbbComputeTotals();
+    const rows = Object.entries(totals)
+      .sort((a,b)=> b[1] - a[1] || a[0].localeCompare(b[0]));
+
+    const lbTitle = document.createElement('div');
+    lbTitle.style.fontWeight = '800';
+    lbTitle.style.marginBottom = '6px';
+    lbTitle.textContent = 'Bingo Bango Bongo Leaderboard';
+    wrap.appendChild(lbTitle);
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+    ['Rank','Player','Points'].forEach(t=>{
+      const th=document.createElement('th');
+      th.textContent=t;
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    rows.forEach(([name,points], idx)=>{
+      const tr = document.createElement('tr');
+      const tdR = document.createElement('td'); tdR.textContent = String(idx+1);
+      const tdN = document.createElement('td'); tdN.textContent = name; tdN.style.textAlign='left';
+      const tdP = document.createElement('td'); tdP.textContent = String(points);
+      tr.appendChild(tdR);
+      tr.appendChild(tdN);
+      tr.appendChild(tdP);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+
+    const summary = document.createElement('div');
+    summary.style.fontWeight = '800';
+    summary.style.margin = '12px 0 6px';
+    summary.textContent = 'Hole-by-Hole Points';
+    wrap.appendChild(summary);
+
+    const holeTable = document.createElement('table');
+    const holeHead = document.createElement('thead');
+    const holeHr = document.createElement('tr');
+    ['Hole', ...selectedPlayers()].forEach(t=>{
+      const th=document.createElement('th');
+      th.textContent=t;
+      holeHr.appendChild(th);
+    });
+    holeHead.appendChild(holeHr);
+    holeTable.appendChild(holeHead);
+
+    const holeBody = document.createElement('tbody');
+    for(let h=1; h<=18; h++){
+      const tr = document.createElement('tr');
+      const tdH = document.createElement('td');
+      tdH.textContent = String(h);
+      tr.appendChild(tdH);
+
+      const entry = bbbState().holes[bbbHoleKey(h)];
+      const scores = entry && entry.scores ? entry.scores : {};
+
+      selectedPlayers().forEach(p=>{
+        const td = document.createElement('td');
+        td.textContent = scores[p] != null ? String(scores[p]) : '-';
+        tr.appendChild(td);
+      });
+
+      holeBody.appendChild(tr);
+    }
+    holeTable.appendChild(holeBody);
+    wrap.appendChild(holeTable);
+  }
+
   // ------------------- PAGE RENDERING -------------------
   function renderSetupPage(){
     if(currentGame() === 'beach_match_play') renderBeachSetup();
     else if(currentGame() === 'wolf') renderWolfSetup();
+    else if(currentGame() === 'bingo_bango_bongo') renderBBBSetup();
   }
 
   function renderEntryPage(){
     if(currentGame() === 'beach_match_play') renderBeachEntry();
     else if(currentGame() === 'wolf') renderWolfEntry();
+    else if(currentGame() === 'bingo_bango_bongo') renderBBBEntry();
   }
 
   function renderBoardPage(){
     if(currentGame() === 'beach_match_play') renderBeachBoard();
     else if(currentGame() === 'wolf') renderWolfBoard();
+    else if(currentGame() === 'bingo_bango_bongo') renderBBBBoard();
   }
 
   function renderAll(){
     renderHome();
     renderPlaceholder();
-    if(currentGame() === 'beach_match_play' || currentGame() === 'wolf'){
+    if(currentGame() === 'beach_match_play' || currentGame() === 'wolf' || currentGame() === 'bingo_bango_bongo'){
       renderSetupPage();
       renderEntryPage();
       renderBoardPage();
