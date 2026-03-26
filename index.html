@@ -218,9 +218,11 @@
     },
     beachMatchPlay: {
       currentMatch: 1,
+      currentHole: 1,
       matches: {}
     },
     wolf: {
+      currentHole: 1,
       order: [],
       holes: {}
     }
@@ -241,18 +243,24 @@
     }
 
     if(!state.beachMatchPlay){
-      state.beachMatchPlay = { currentMatch: 1, matches: {} };
+      state.beachMatchPlay = { currentMatch: 1, currentHole: 1, matches: {} };
     }
     for(let m=1;m<=6;m++) if(!state.beachMatchPlay.matches[m]) state.beachMatchPlay.matches[m] = blankBeachMatch();
     if(!state.beachMatchPlay.currentMatch || state.beachMatchPlay.currentMatch < 1 || state.beachMatchPlay.currentMatch > 6){
       state.beachMatchPlay.currentMatch = 1;
     }
+    if(!state.beachMatchPlay.currentHole || state.beachMatchPlay.currentHole < 1 || state.beachMatchPlay.currentHole > 9){
+      state.beachMatchPlay.currentHole = 1;
+    }
 
     if(!state.wolf){
-      state.wolf = { order: [], holes: {} };
+      state.wolf = { currentHole: 1, order: [], holes: {} };
     }
     if(!Array.isArray(state.wolf.order)) state.wolf.order = [];
     if(!state.wolf.holes) state.wolf.holes = {};
+    if(!state.wolf.currentHole || state.wolf.currentHole < 1 || state.wolf.currentHole > 18){
+      state.wolf.currentHole = 1;
+    }
   }
 
   async function loadState(){
@@ -389,7 +397,6 @@
     state.home.game = game;
     state.home.selectedPlayers = checked;
 
-    // Keep Wolf order aligned if current order is empty or now invalid
     const wolfInvalid = !state.wolf.order.length || state.wolf.order.some(p => !checked.includes(p)) || state.wolf.order.length !== checked.length;
     if(wolfInvalid){
       state.wolf.order = [...checked];
@@ -442,6 +449,7 @@
 
   function beachSetCurrentMatch(m){
     beachState().currentMatch = m;
+    beachState().currentHole = 1;
     saveState();
     renderAll();
   }
@@ -450,6 +458,7 @@
     const m = beachCurrentMatch();
     if(beachMatchComplete(m) && m < 6){
       beachState().currentMatch = m + 1;
+      beachState().currentHole = 1;
       saveState();
       renderAll();
       show('setup');
@@ -483,6 +492,7 @@
     const sure = confirm("Reset Beach Match Play?\n\nThis clears all Beach Match Play matches, scores, points, and money.");
     if(!sure) return;
     beachState().currentMatch = 1;
+    beachState().currentHole = 1;
     beachState().matches = {};
     for(let m=1;m<=6;m++) beachState().matches[m] = blankBeachMatch();
     lastAction = null;
@@ -523,8 +533,10 @@
 
     lastAction = { game: 'beach_match_play', match: m, key, prev };
     beachState().matches[m].holes[key] = {scores, updatedAt: new Date().toISOString()};
+
+    beachState().currentHole = holeIndex < 9 ? holeIndex + 1 : 9;
+
     saveState();
-    if(holeIndex < 9) $('bmp_hole').value = String(holeIndex + 1);
     renderAll();
     beachAdvanceIfComplete();
   }
@@ -709,12 +721,11 @@
 
     const row = document.createElement('div');
     row.className = 'row';
-    row.innerHTML = `<label for="bmp_hole">Hole</label><select id="bmp_hole"></select><button id="bmpLoadHole">Load</button><span id="bmpMsg" class="muted"></span>`;
+    row.innerHTML = `<label for="bmp_hole">Hole</label><select id="bmp_hole"></select><span id="bmpMsg" class="muted"></span>`;
     wrap.appendChild(row);
 
-    for(let h=1; h<=9; h++){
-      $('bmp_hole').appendChild(option(String(h), `Hole ${beachDisplayHoleNumber(m,h)}`));
-    }
+    for(let h=1; h<=9; h++) $('bmp_hole').appendChild(option(String(h), `Hole ${beachDisplayHoleNumber(m,h)}`));
+    $('bmp_hole').value = String(beachState().currentHole || 1);
 
     const holeIndex = Number($('bmp_hole').value || 1);
     const holeDisplay = beachDisplayHoleNumber(m, holeIndex);
@@ -769,8 +780,10 @@
     $('bmpSaveHole').disabled = locked || !setup;
     $('bmpUndo').disabled = locked || !setup;
 
-    $('bmpLoadHole').addEventListener('click', renderAll);
-    $('bmp_hole').addEventListener('change', renderAll);
+    $('bmp_hole').addEventListener('change', ()=>{
+      beachState().currentHole = Number($('bmp_hole').value);
+      renderAll();
+    });
 
     $('bmpSaveHole').addEventListener('click', ()=>{
       try{
@@ -791,7 +804,7 @@
     const tip = document.createElement('div');
     tip.className = 'small muted';
     tip.style.marginTop = '6px';
-    tip.textContent = 'Tip: Save Hole 1 → auto-advances to next hole. When all 9 holes are saved, the app moves you to the next match.';
+    tip.textContent = 'After you click Save Hole, the app automatically advances to the next hole.';
     wrap.appendChild(tip);
   }
 
@@ -959,6 +972,7 @@
     if(!sure) return;
     wolfState().order = [...selectedPlayers()];
     wolfState().holes = {};
+    wolfState().currentHole = 1;
     lastAction = null;
     saveState();
     renderAll();
@@ -985,8 +999,8 @@
     const prev = wolfState().holes[key] ? JSON.parse(JSON.stringify(wolfState().holes[key])) : null;
     lastAction = { game: 'wolf', key, prev };
     wolfState().holes[key] = { scores, updatedAt: new Date().toISOString() };
+    wolfState().currentHole = hole < 18 ? hole + 1 : 18;
     saveState();
-    if(hole < 18) $('wolf_hole').value = String(hole + 1);
     renderAll();
   }
 
@@ -1128,10 +1142,11 @@
 
     const row = document.createElement('div');
     row.className = 'row';
-    row.innerHTML = `<label for="wolf_hole">Hole</label><select id="wolf_hole"></select><button id="wolfLoadHole">Load</button><span id="wolfMsg" class="muted"></span>`;
+    row.innerHTML = `<label for="wolf_hole">Hole</label><select id="wolf_hole"></select><span id="wolfMsg" class="muted"></span>`;
     wrap.appendChild(row);
 
     for(let h=1; h<=18; h++) $('wolf_hole').appendChild(option(String(h), `Hole ${h}`));
+    $('wolf_hole').value = String(wolfState().currentHole || 1);
 
     const hole = Number($('wolf_hole').value || 1);
     const wolf = wolfGetWolfForHole(hole);
@@ -1171,8 +1186,10 @@
     btnRow.innerHTML = `<button id="wolfSaveHole" class="primary">Save Hole</button><button id="wolfUndo">Undo</button>`;
     wrap.appendChild(btnRow);
 
-    $('wolf_hole').addEventListener('change', renderAll);
-    $('wolfLoadHole').addEventListener('click', renderAll);
+    $('wolf_hole').addEventListener('change', ()=>{
+      wolfState().currentHole = Number($('wolf_hole').value);
+      renderAll();
+    });
 
     $('wolfSaveHole').addEventListener('click', ()=>{
       try{
@@ -1193,7 +1210,7 @@
     const tip = document.createElement('div');
     tip.className = 'small muted';
     tip.style.marginTop = '6px';
-    tip.textContent = 'Scoring options: 0, 1, 2, or 4 points.';
+    tip.textContent = 'Scoring options: 0, 1, 2, or 4 points. After you click Save Hole, the app automatically advances to the next hole.';
     wrap.appendChild(tip);
   }
 
