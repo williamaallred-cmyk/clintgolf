@@ -50,7 +50,7 @@
       <div class="small muted">Choose your game, choose your players, and start scoring.</div>
     </div>
     <div class="controls">
-      <button id="nav-landing">Landing Page</button>
+      <button id="nav-landing">Home</button>
       <button id="nav-setup">Match Setup</button>
       <button id="nav-entry">Score Entry</button>
       <button id="nav-board">Scoreboard</button>
@@ -128,7 +128,7 @@
         The landing page is ready, and Beach Match Play is fully coded. You can add the other game logic later.
       </div>
       <div class="row" style="margin-top:10px">
-        <button id="backToLanding">Back to Landing Page</button>
+        <button id="backToLanding">Back to Home</button>
       </div>
     </div>
   </section>
@@ -159,7 +159,7 @@
     <div class="row">
       <button id="saveSetup" class="primary">Save Teams</button>
       <button id="clearSetup">Clear</button>
-      <button id="resetTournament" class="danger" title="Clears all matches, scores, points, and money">Reset Beach Match Play</button>
+      <button id="resetTournament" class="danger" title="Clears all Beach Match Play matches, scores, points, and money">Reset Beach Match Play</button>
       <span id="setupMsg" class="muted"></span>
     </div>
 
@@ -203,7 +203,22 @@
 
 <script type="module">
   // ------------------- CONFIG -------------------
-  const ALL_PLAYERS = ['Tucker','Clint','Brian','Jeff'];
+  const ALL_PLAYERS = [
+    'Tucker',
+    'Clint',
+    'Brian',
+    'Jeff',
+    'Logan',
+    'Dale',
+    'Matt',
+    'Kevin',
+    'Tyler',
+    'Daniel',
+    'Adam A',
+    'Tom',
+    'Adam R'
+  ];
+
   const MONEY_PER_PLAYER_PER_MATCH = 10;
   const LOCAL_KEY = 'golf_games_hub_v1';
 
@@ -239,7 +254,7 @@
   let state = {
     landing: {
       game: 'beach_match_play',
-      selectedPlayers: [...ALL_PLAYERS]
+      selectedPlayers: ['Tucker','Clint','Brian','Jeff']
     },
     beachMatchPlay: {
       currentMatch: 1,
@@ -253,11 +268,11 @@
 
   function ensureState(){
     if(!state.landing){
-      state.landing = { game: 'beach_match_play', selectedPlayers: [...ALL_PLAYERS] };
+      state.landing = { game: 'beach_match_play', selectedPlayers: ['Tucker','Clint','Brian','Jeff'] };
     }
     if(!state.landing.game) state.landing.game = 'beach_match_play';
     if(!Array.isArray(state.landing.selectedPlayers) || !state.landing.selectedPlayers.length){
-      state.landing.selectedPlayers = [...ALL_PLAYERS];
+      state.landing.selectedPlayers = ['Tucker','Clint','Brian','Jeff'];
     }
 
     if(!state.beachMatchPlay){
@@ -499,7 +514,7 @@
   }
 
   function validateSetup(team1, team2){
-    if(selectedPlayers().length < 4) return 'Beach Match Play needs 4 selected players on the landing page.';
+    if(selectedPlayers().length < 4) return 'Beach Match Play needs 4 selected players on the Home page.';
     const all = [...team1, ...team2];
     if(all.some(x=>!x)) return 'Pick all 4 players.';
     const set = new Set(all);
@@ -790,7 +805,7 @@
 
       const tdN = document.createElement('td');
       tdN.textContent = name;
-      tdN.style.textAlign = 'left';
+      tdN.style.textAlign='left';
 
       const tdP = document.createElement('td');
       tdP.textContent = String(points);
@@ -838,7 +853,7 @@
       if(!mp){
         const t = document.createElement('div');
         t.className = 'small muted';
-        t.style.marginTop = '6px';
+        t.style.marginTop='6px';
         t.textContent = 'Teams not set yet.';
         card.appendChild(t);
       } else {
