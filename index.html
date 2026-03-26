@@ -42,7 +42,7 @@
       <h1>Golf Match Play — 6 Matches</h1>
       <div class="small muted">
         Lowest team total wins each hole (1 point). Ties award 0 points. No carryovers.
-        <br><strong>Money:</strong> Win a match = +$10 per winning player, -$10 per losing player. Tied match = $0.
+        <br><strong>Money:</strong> At the end of each match, each winning player gets +$10 and each losing player gets -$10. Tied match = $0.
       </div>
     </div>
     <div class="controls">
@@ -470,18 +470,15 @@
     return {team1Pts, team2Pts, holes, setup};
   }
 
-  // ✅ Money now settles by MATCH, not by hole
+  // ✅ Current match points only, cumulative money across completed matches
   function computePlayerTotals(){
     const totals = {};
     PLAYERS.forEach(p => totals[p] = { points: 0, money: 0 });
 
-    for(let m=1; m<=6; m++){
-      const mp = computeMatchPoints(m);
-      if(!mp) continue;
-
-      const {setup, holes, team1Pts, team2Pts} = mp;
-
-      // points still earned by hole
+    // CURRENT MATCH points only
+    const currentMatchData = computeMatchPoints(current());
+    if(currentMatchData){
+      const {setup, holes} = currentMatchData;
       holes.forEach(x=>{
         if(x.status === '1'){
           totals[setup.team1[0]].points += 1;
@@ -491,8 +488,15 @@
           totals[setup.team2[1]].points += 1;
         }
       });
+    }
 
-      // money earned by match result
+    // ALL completed matches money
+    for(let m=1; m<=6; m++){
+      const mp = computeMatchPoints(m);
+      if(!mp || !matchComplete(m)) continue;
+
+      const {setup, team1Pts, team2Pts} = mp;
+
       if(team1Pts > team2Pts){
         totals[setup.team1[0]].money += MONEY_PER_PLAYER_PER_MATCH;
         totals[setup.team1[1]].money += MONEY_PER_PLAYER_PER_MATCH;
@@ -504,8 +508,8 @@
         totals[setup.team1[0]].money -= MONEY_PER_PLAYER_PER_MATCH;
         totals[setup.team1[1]].money -= MONEY_PER_PLAYER_PER_MATCH;
       }
-      // tied match => $0
     }
+
     return totals;
   }
 
@@ -518,14 +522,13 @@
     const wrap = $('boardBody');
     wrap.innerHTML='';
 
-    // Individual leaderboard
     const leaderboard = document.createElement('div');
     leaderboard.style.marginBottom = '12px';
 
     const lbTitle = document.createElement('div');
     lbTitle.style.fontWeight = '800';
     lbTitle.style.marginBottom = '6px';
-    lbTitle.textContent = 'Individual Leaderboard (cumulative)';
+    lbTitle.textContent = `Current Match Leaderboard (Match ${current()})`;
     leaderboard.appendChild(lbTitle);
 
     const totals = computePlayerTotals();
@@ -536,7 +539,7 @@
     const lbTable = document.createElement('table');
     const lbHead = document.createElement('thead');
     const lbHr = document.createElement('tr');
-    ['Rank','Player','Points','Money'].forEach(t=>{
+    ['Rank','Player','Points (current match)','Money (all completed matches)'].forEach(t=>{
       const th=document.createElement('th');
       th.textContent=t;
       lbHr.appendChild(th);
@@ -558,7 +561,6 @@
     leaderboard.appendChild(lbTable);
     wrap.appendChild(leaderboard);
 
-    // Matches
     const summaryTitle = document.createElement('div');
     summaryTitle.style.fontWeight = '800';
     summaryTitle.style.margin = '6px 0';
@@ -592,14 +594,15 @@
         card.appendChild(t);
       } else {
         const setup = mp.setup;
+        let moneyText = '$0';
+        if(matchComplete(m)){
+          if(mp.team1Pts > mp.team2Pts) moneyText = `Team 1 +$${MONEY_PER_PLAYER_PER_MATCH} each / Team 2 -$${MONEY_PER_PLAYER_PER_MATCH} each`;
+          else if(mp.team2Pts > mp.team1Pts) moneyText = `Team 2 +$${MONEY_PER_PLAYER_PER_MATCH} each / Team 1 -$${MONEY_PER_PLAYER_PER_MATCH} each`;
+        }
+
         const line = document.createElement('div');
         line.style.marginTop='6px';
         line.className='small';
-
-        let moneyText = '$0';
-        if(mp.team1Pts > mp.team2Pts) moneyText = `Team 1 +$${MONEY_PER_PLAYER_PER_MATCH} each / Team 2 -$${MONEY_PER_PLAYER_PER_MATCH} each`;
-        else if(mp.team2Pts > mp.team1Pts) moneyText = `Team 2 +$${MONEY_PER_PLAYER_PER_MATCH} each / Team 1 -$${MONEY_PER_PLAYER_PER_MATCH} each`;
-
         line.textContent = `Team 1 (${setup.team1.join(' + ')}) points: ${mp.team1Pts}  |  Team 2 (${setup.team2.join(' + ')}) points: ${mp.team2Pts}  |  Match money: ${moneyText}`;
         card.appendChild(line);
 
