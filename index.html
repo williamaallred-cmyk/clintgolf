@@ -4,44 +4,425 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Golf Games</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;max-width:1100px;margin:18px auto;padding:12px;color:#111}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap}
-    h1{font-size:20px;margin:0}
-    .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .panel{border:1px solid #ddd;border-radius:10px;padding:12px;margin-bottom:12px;background:#fafafa}
-    .row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
-    label{font-size:13px;min-width:44px}
-    select,input[type="password"]{padding:4px 6px;border-radius:8px;border:1px solid #ccc;font-size:13px;height:30px}
-    button{padding:6px 10px;border-radius:8px;border:1px solid #bbb;background:#f3f3f3;cursor:pointer}
-    button.primary{background:#0366d6;color:#fff;border-color:#0366d6}
-    button.danger{background:#b00020;color:#fff;border-color:#b00020}
-    button:disabled, select:disabled, input:disabled{opacity:0.55;cursor:not-allowed}
-    .small{font-size:12px;color:#555}
-    .muted{color:#666;font-size:13px}
-    .hidden{display:none}
-    .notice{padding:8px 10px;border-radius:10px;border:1px solid #e6e6e6;background:#fff}
-    .kpi{display:flex;gap:10px;flex-wrap:wrap}
-    .kpi .box{padding:8px 10px;border-radius:10px;border:1px solid #e6e6e6;background:#fff}
-    .landing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
-    .card{border:1px solid #ddd;border-radius:10px;padding:12px;background:#fff}
-    .checkbox-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:8px}
-    .checkbox-item{display:flex;align-items:center;gap:8px;border:1px solid #e5e5e5;border-radius:8px;padding:8px;background:#fff}
-    .money-pos{color:#0a7a2f;font-weight:600}
-    .money-neg{color:#b00020;font-weight:600}
-    .money-zero{color:#666}
-    table{border-collapse:collapse;width:100%}
-    th,td{border:1px solid #eee;text-align:center;padding:6px 8px}
-    .player-input{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-    .player-input span{width:140px;flex:0 0 140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .player-input select{width:80px}
-    .pillrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-    .pill{padding:6px;border-radius:8px;border:1px solid #ddd;min-width:40px;text-align:center;background:#fff}
-    .pill.win1{background:#e6ffed;border-color:#8be28a}
-    .pill.win2{background:#ffeef0;border-color:#ffb3ba}
-    .flex-between{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-    .subtle{background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:8px}
-    .admin-box{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    :root{
+      --font-ui:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      --font-data:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      --bg:#f4f7fb;
+      --panel:#ffffff;
+      --panel-soft:#f8fbff;
+      --border:#dde4ee;
+      --border-strong:#cfd8e4;
+      --text:#111827;
+      --muted:#6b7280;
+      --blue:#0b63f6;
+      --blue-dark:#084fc7;
+      --blue-soft:#e9f1ff;
+      --danger:#b00020;
+      --green:#0a7a2f;
+      --shadow:0 10px 30px rgba(15,23,42,.06);
+      --shadow-soft:0 4px 14px rgba(15,23,42,.05);
+      --radius:16px;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      font-family:var(--font-ui);
+      max-width:1120px;
+      margin:18px auto;
+      padding:12px;
+      color:var(--text);
+      background:linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%);
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:14px;
+      gap:12px;
+      flex-wrap:wrap
+    }
+
+    h1{
+      font-size:28px;
+      font-weight:900;
+      letter-spacing:-0.03em;
+      margin:0;
+      line-height:1.05;
+    }
+
+    .controls{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap
+    }
+
+    .panel{
+      border:1px solid var(--border);
+      border-radius:20px;
+      padding:16px;
+      margin-bottom:14px;
+      background:var(--panel);
+      box-shadow:var(--shadow);
+    }
+
+    .row{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      margin-bottom:8px;
+      flex-wrap:wrap
+    }
+
+    label{
+      font-size:13px;
+      min-width:44px;
+      color:var(--muted);
+      font-weight:700;
+      letter-spacing:-0.01em;
+    }
+
+    select,
+    input[type="password"]{
+      padding:6px 10px;
+      border-radius:12px;
+      border:1px solid var(--border-strong);
+      font-size:13px;
+      height:38px;
+      background:#fff;
+      color:var(--text);
+      font-family:var(--font-ui);
+      box-shadow:var(--shadow-soft);
+    }
+
+    select:focus,
+    input[type="password"]:focus{
+      outline:none;
+      border-color:var(--blue);
+      box-shadow:0 0 0 3px rgba(11,99,246,.12);
+    }
+
+    button{
+      padding:8px 13px;
+      border-radius:12px;
+      border:1px solid var(--border-strong);
+      background:#f8fafc;
+      color:var(--text);
+      cursor:pointer;
+      font-family:var(--font-ui);
+      font-weight:700;
+      letter-spacing:-0.01em;
+      box-shadow:var(--shadow-soft);
+      transition:transform .06s ease, background .15s ease, border-color .15s ease;
+    }
+
+    button:hover:not(:disabled){ transform:translateY(-1px); }
+    button:active:not(:disabled){ transform:translateY(0); }
+
+    button.primary{
+      background:var(--blue);
+      color:#fff;
+      border-color:var(--blue);
+    }
+
+    button.primary:hover:not(:disabled){
+      background:var(--blue-dark);
+      border-color:var(--blue-dark);
+    }
+
+    button.danger{
+      background:var(--danger);
+      color:#fff;
+      border-color:var(--danger);
+    }
+
+    button:disabled,
+    select:disabled,
+    input:disabled{
+      opacity:0.55;
+      cursor:not-allowed
+    }
+
+    .small{
+      font-size:12px;
+      color:#555
+    }
+
+    .muted{
+      color:var(--muted);
+      font-size:13px
+    }
+
+    .hidden{
+      display:none
+    }
+
+    .notice{
+      padding:11px 13px;
+      border-radius:14px;
+      border:1px solid #e5e7eb;
+      background:#fff;
+      box-shadow:var(--shadow-soft);
+    }
+
+    .kpi{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap
+    }
+
+    .kpi .box{
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid #e5e7eb;
+      background:var(--panel-soft);
+      font-family:var(--font-data);
+      font-weight:800;
+      box-shadow:var(--shadow-soft);
+    }
+
+    .landing-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+      margin-top:12px
+    }
+
+    .card{
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:14px;
+      background:#fff;
+      box-shadow:var(--shadow-soft);
+    }
+
+    .card strong{
+      font-size:16px;
+      font-weight:800;
+      letter-spacing:-0.02em;
+    }
+
+    .checkbox-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:8px;
+      margin-top:8px
+    }
+
+    .checkbox-item{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      padding:10px 11px;
+      background:#fff;
+      box-shadow:var(--shadow-soft);
+    }
+
+    .money-pos{
+      color:var(--green);
+      font-weight:900;
+      font-family:var(--font-data);
+    }
+
+    .money-neg{
+      color:var(--danger);
+      font-weight:900;
+      font-family:var(--font-data);
+    }
+
+    .money-zero{
+      color:var(--muted);
+      font-weight:800;
+      font-family:var(--font-data);
+    }
+
+    table{
+      border-collapse:separate;
+      border-spacing:0;
+      width:100%;
+      background:#fff;
+      border:1px solid #e9edf3;
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow:var(--shadow-soft);
+    }
+
+    th,td{
+      border-right:1px solid #eef2f6;
+      border-bottom:1px solid #eef2f6;
+      text-align:center;
+      padding:9px 10px
+    }
+
+    tr:last-child td{ border-bottom:none; }
+    th:last-child, td:last-child{ border-right:none; }
+
+    th{
+      background:#f8fafc;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      color:#4b5563;
+      font-weight:900;
+    }
+
+    td{
+      font-family:var(--font-data);
+      font-weight:800;
+      font-size:15px;
+      letter-spacing:-0.015em;
+    }
+
+    td:first-child,
+    th:first-child{
+      font-family:var(--font-data);
+      font-weight:900;
+    }
+
+    .player-input{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:8px;
+      padding:7px 0;
+    }
+
+    .player-input span{
+      width:150px;
+      flex:0 0 150px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-weight:800;
+      color:#1f2937;
+      letter-spacing:-0.01em;
+    }
+
+    .player-input select{
+      width:96px;
+      font-family:var(--font-data);
+      font-weight:900;
+      font-size:16px;
+      letter-spacing:-0.01em;
+    }
+
+    .pillrow{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:8px
+    }
+
+    .pill{
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid #d9dee7;
+      min-width:44px;
+      text-align:center;
+      background:#fff;
+      font-family:var(--font-data);
+      font-weight:900;
+      font-size:14px;
+      letter-spacing:-0.01em;
+      box-shadow:var(--shadow-soft);
+    }
+
+    .pill.win1{
+      background:#e6ffed;
+      border-color:#8be28a
+    }
+
+    .pill.win2{
+      background:#ffeef0;
+      border-color:#ffb3ba
+    }
+
+    .flex-between{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap
+    }
+
+    .subtle{
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:14px;
+      padding:11px 13px;
+      box-shadow:var(--shadow-soft);
+    }
+
+    .admin-box{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap
+    }
+
+    #setupTitle,
+    #entryTitle,
+    #boardTitle{
+      font-size:20px;
+      font-weight:900;
+      letter-spacing:-0.02em;
+    }
+
+    #boardContent td:nth-child(1),
+    #boardContent td:nth-child(3),
+    #boardContent td:nth-child(4){
+      font-size:16px;
+      font-weight:900;
+    }
+
+    #bmp_hole,
+    #wolf_hole,
+    #bbb_hole,
+    #gameSelect{
+      font-family:var(--font-data);
+      font-weight:900;
+      font-size:15px;
+      letter-spacing:-0.01em;
+    }
+
+    .score-pop{
+      font-family:var(--font-data);
+      font-weight:900;
+      letter-spacing:-0.02em;
+    }
+
+    .leaderboard-card{
+      background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%);
+      border:1px solid #e5ebf3;
+      border-radius:18px;
+      padding:12px;
+      box-shadow:var(--shadow);
+    }
+
+    .active-hole-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      background:var(--blue-soft);
+      color:var(--blue-dark);
+      border:1px solid #bfd3ff;
+      border-radius:999px;
+      padding:6px 10px;
+      font-family:var(--font-data);
+      font-weight:900;
+      letter-spacing:-0.01em;
+      box-shadow:var(--shadow-soft);
+    }
   </style>
   <link rel="icon" href="data:,">
 </head>
@@ -59,7 +440,6 @@
     </div>
   </header>
 
-  <!-- HOME -->
   <section id="home" class="panel">
     <div class="flex-between">
       <div>
@@ -131,7 +511,6 @@
     </div>
   </section>
 
-  <!-- PLACEHOLDER -->
   <section id="placeholder" class="panel hidden">
     <div class="notice">
       <strong id="placeholderTitle">This game is not built yet.</strong>
@@ -144,7 +523,6 @@
     </div>
   </section>
 
-  <!-- GENERIC SETUP -->
   <section id="setup" class="panel hidden">
     <div class="flex-between">
       <strong id="setupTitle">Setup</strong>
@@ -153,7 +531,6 @@
     <div id="setupContent" style="margin-top:10px"></div>
   </section>
 
-  <!-- GENERIC ENTRY -->
   <section id="entry" class="panel hidden">
     <div class="flex-between">
       <strong id="entryTitle">Score Entry</strong>
@@ -162,7 +539,6 @@
     <div id="entryContent" style="margin-top:10px"></div>
   </section>
 
-  <!-- GENERIC BOARD -->
   <section id="board" class="panel hidden">
     <div class="flex-between">
       <strong id="boardTitle">Scoreboard</strong>
@@ -172,7 +548,6 @@
   </section>
 
 <script type="module">
-  // ------------------- CONFIG -------------------
   const ALL_PLAYERS = [
     'Tucker','Clint','Brian','Jeff','Logan','Dale','Matt','Kevin','Tyler','Daniel','Adam A','Tom','Adam R'
   ];
@@ -188,7 +563,6 @@
     skins: 'Skins'
   };
 
-  // ------------------- FIREBASE -------------------
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -209,7 +583,6 @@
   let isApplyingRemote = false;
   let isAdmin = sessionStorage.getItem('golf_games_admin') === '1';
 
-  // ------------------- STATE -------------------
   let state = {
     home: {
       game: 'beach_match_play',
@@ -233,7 +606,6 @@
 
   let lastAction = null;
 
-  // ------------------- STATE HELPERS -------------------
   function blankBeachMatch(){ return { setup: null, holes: {} }; }
 
   function ensureState(){
@@ -315,7 +687,6 @@
     }, (err) => console.error("Live sync error:", err));
   }
 
-  // ------------------- GLOBAL HELPERS -------------------
   function $(id){ return document.getElementById(id); }
 
   function option(value, text){
@@ -417,7 +788,6 @@
     syncAdminUI();
   }
 
-  // ------------------- HOME -------------------
   function renderHome(){
     $('gameSelect').value = currentGame();
 
@@ -491,7 +861,7 @@
     $('placeholderTitle').textContent = `${gameName} is not built yet.`;
   }
 
-  // =================== BEACH MATCH PLAY ===================
+  // BEACH MATCH PLAY
   function beachState(){ return state.beachMatchPlay; }
   function beachCurrentMatch(){ return beachState().currentMatch; }
 
@@ -691,7 +1061,7 @@
 
     const top = document.createElement('div');
     top.className = 'notice';
-    top.innerHTML = `<strong>Match ${m}</strong> — Holes ${beachDisplayHoleNumber(m,1)}-${beachDisplayHoleNumber(m,9)}`;
+    top.innerHTML = `<strong>Match ${m}</strong> — Holes <span class="score-pop">${beachDisplayHoleNumber(m,1)}-${beachDisplayHoleNumber(m,9)}</span>`;
     wrap.appendChild(top);
 
     if(locked){
@@ -768,9 +1138,9 @@
     kpi.className = 'kpi';
     kpi.style.marginTop = '8px';
     kpi.innerHTML = `
-      <div class="box"><strong>Current match:</strong> ${m} / 6</div>
+      <div class="box"><strong>Current match:</strong> <span class="score-pop">${m}</span> / 6</div>
       <div class="box"><strong>Status:</strong> ${beachMatchComplete(m) ? 'Complete' : (beachHolesSavedCount(m) > 0 ? 'In progress' : 'Not started')}</div>
-      <div class="box"><strong>Progress:</strong> ${beachHolesSavedCount(m)} / 9 holes saved</div>
+      <div class="box"><strong>Progress:</strong> <span class="score-pop">${beachHolesSavedCount(m)}</span> / 9 holes saved</div>
     `;
     wrap.appendChild(kpi);
   }
@@ -798,9 +1168,14 @@
     const holeIndex = Number($('bmp_hole').value || 1);
     const holeDisplay = beachDisplayHoleNumber(m, holeIndex);
 
+    const chip = document.createElement('div');
+    chip.className = 'active-hole-chip';
+    chip.textContent = `Active Hole ${holeDisplay}`;
+    wrap.appendChild(chip);
+
     const title = document.createElement('div');
-    title.style.marginBottom = '8px';
-    title.style.fontWeight = '600';
+    title.style.margin = '8px 0';
+    title.style.fontWeight = '700';
     title.textContent = setup
       ? `Match ${m} — Hole ${holeDisplay} | Team 1: ${setup.team1.join(' + ')} vs Team 2: ${setup.team2.join(' + ')}`
       : `Match ${m} — Hole ${holeDisplay} | Teams not set yet`;
@@ -809,7 +1184,6 @@
     if(!isAdmin) wrap.appendChild(requireAdminMessage());
 
     const inputs = document.createElement('div');
-    inputs.id = 'bmpInputs';
     wrap.appendChild(inputs);
 
     if(locked){
@@ -886,11 +1260,12 @@
     wrap.innerHTML = '';
 
     const leaderboard = document.createElement('div');
+    leaderboard.className = 'leaderboard-card';
     leaderboard.style.marginBottom = '12px';
 
     const lbTitle = document.createElement('div');
-    lbTitle.style.fontWeight = '800';
-    lbTitle.style.marginBottom = '6px';
+    lbTitle.style.fontWeight = '900';
+    lbTitle.style.marginBottom = '8px';
     lbTitle.textContent = `Beach Match Play Leaderboard (Current Match ${beachCurrentMatch()})`;
     leaderboard.appendChild(lbTitle);
 
@@ -926,7 +1301,7 @@
     wrap.appendChild(leaderboard);
 
     const summaryTitle = document.createElement('div');
-    summaryTitle.style.fontWeight = '800';
+    summaryTitle.style.fontWeight = '900';
     summaryTitle.style.margin = '6px 0';
     summaryTitle.textContent = 'Beach Match Play Matches';
     wrap.appendChild(summaryTitle);
@@ -1003,7 +1378,7 @@
     }
   }
 
-  // =================== WOLF ===================
+  // WOLF
   function wolfState(){ return state.wolf; }
   function wolfHoleKey(hole){ return `h${hole}`; }
 
@@ -1228,9 +1603,14 @@
     const hole = Number($('wolf_hole').value || 1);
     const wolf = wolfGetWolfForHole(hole);
 
+    const chip = document.createElement('div');
+    chip.className = 'active-hole-chip';
+    chip.textContent = `Active Hole ${hole}`;
+    wrap.appendChild(chip);
+
     const title = document.createElement('div');
     title.className = 'subtle';
-    title.style.marginBottom = '8px';
+    title.style.margin = '8px 0';
     title.innerHTML = `<strong>Hole ${hole}</strong> — Wolf: <strong>${wolf}</strong>`;
     wrap.appendChild(title);
 
@@ -1307,11 +1687,14 @@
     const rows = Object.entries(totals)
       .sort((a,b)=> b[1] - a[1] || a[0].localeCompare(b[0]));
 
+    const leaderboard = document.createElement('div');
+    leaderboard.className = 'leaderboard-card';
+
     const lbTitle = document.createElement('div');
-    lbTitle.style.fontWeight = '800';
-    lbTitle.style.marginBottom = '6px';
+    lbTitle.style.fontWeight = '900';
+    lbTitle.style.marginBottom = '8px';
     lbTitle.textContent = 'Wolf Leaderboard';
-    wrap.appendChild(lbTitle);
+    leaderboard.appendChild(lbTitle);
 
     const table = document.createElement('table');
     const thead = document.createElement('thead');
@@ -1336,10 +1719,11 @@
       tbody.appendChild(tr);
     });
     table.appendChild(tbody);
-    wrap.appendChild(table);
+    leaderboard.appendChild(table);
+    wrap.appendChild(leaderboard);
 
     const summary = document.createElement('div');
-    summary.style.fontWeight = '800';
+    summary.style.fontWeight = '900';
     summary.style.margin = '12px 0 6px';
     summary.textContent = 'Hole-by-Hole Points';
     wrap.appendChild(summary);
@@ -1378,7 +1762,7 @@
     wrap.appendChild(holeTable);
   }
 
-  // =================== BINGO BANGO BONGO ===================
+  // BINGO BANGO BONGO
   function bbbState(){ return state.bingoBangoBongo; }
   function bbbHoleKey(hole){ return `h${hole}`; }
 
@@ -1470,7 +1854,7 @@
     btnRow.style.marginTop = '10px';
     btnRow.innerHTML = `
       <button id="bbbReset" class="danger">Reset Bingo Bango Bongo</button>
-      <span class="muted">Current hole: ${bbbState().currentHole}</span>
+      <span class="muted">Current hole: <span class="score-pop">${bbbState().currentHole}</span></span>
     `;
     wrap.appendChild(btnRow);
 
@@ -1504,9 +1888,14 @@
 
     const hole = Number($('bbb_hole').value || 1);
 
+    const chip = document.createElement('div');
+    chip.className = 'active-hole-chip';
+    chip.textContent = `Active Hole ${hole}`;
+    wrap.appendChild(chip);
+
     const title = document.createElement('div');
     title.className = 'subtle';
-    title.style.marginBottom = '8px';
+    title.style.margin = '8px 0';
     title.innerHTML = `<strong>Hole ${hole}</strong>`;
     wrap.appendChild(title);
 
@@ -1583,11 +1972,14 @@
     const rows = Object.entries(totals)
       .sort((a,b)=> b[1] - a[1] || a[0].localeCompare(b[0]));
 
+    const leaderboard = document.createElement('div');
+    leaderboard.className = 'leaderboard-card';
+
     const lbTitle = document.createElement('div');
-    lbTitle.style.fontWeight = '800';
-    lbTitle.style.marginBottom = '6px';
+    lbTitle.style.fontWeight = '900';
+    lbTitle.style.marginBottom = '8px';
     lbTitle.textContent = 'Bingo Bango Bongo Leaderboard';
-    wrap.appendChild(lbTitle);
+    leaderboard.appendChild(lbTitle);
 
     const table = document.createElement('table');
     const thead = document.createElement('thead');
@@ -1612,10 +2004,11 @@
       tbody.appendChild(tr);
     });
     table.appendChild(tbody);
-    wrap.appendChild(table);
+    leaderboard.appendChild(table);
+    wrap.appendChild(leaderboard);
 
     const summary = document.createElement('div');
-    summary.style.fontWeight = '800';
+    summary.style.fontWeight = '900';
     summary.style.margin = '12px 0 6px';
     summary.textContent = 'Hole-by-Hole Points';
     wrap.appendChild(summary);
@@ -1653,7 +2046,6 @@
     wrap.appendChild(holeTable);
   }
 
-  // ------------------- PAGE RENDERING -------------------
   function renderSetupPage(){
     if(currentGame() === 'beach_match_play') renderBeachSetup();
     else if(currentGame() === 'wolf') renderWolfSetup();
@@ -1683,7 +2075,6 @@
     syncAdminUI();
   }
 
-  // ------------------- EVENTS -------------------
   $('nav-home').addEventListener('click', ()=> show('home'));
   $('nav-setup').addEventListener('click', ()=> navigateGameSection('setup'));
   $('nav-entry').addEventListener('click', ()=> navigateGameSection('entry'));
@@ -1699,7 +2090,6 @@
     if(e.key === 'Enter') adminLogin();
   });
 
-  // ------------------- INIT -------------------
   (async function init(){
     await loadState();
     startLiveSync();
