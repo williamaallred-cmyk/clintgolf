@@ -27,7 +27,6 @@
       --green:#0a7a2f;
       --shadow:0 10px 30px rgba(15,23,42,.06);
       --shadow-soft:0 4px 14px rgba(15,23,42,.05);
-      --radius:16px;
     }
 
     *{box-sizing:border-box}
@@ -47,7 +46,7 @@
       justify-content:space-between;
       margin-bottom:14px;
       gap:12px;
-      flex-wrap:wrap
+      flex-wrap:wrap;
     }
 
     h1{
@@ -62,7 +61,7 @@
       display:flex;
       gap:10px;
       align-items:center;
-      flex-wrap:wrap
+      flex-wrap:wrap;
     }
 
     .panel{
@@ -79,7 +78,7 @@
       gap:8px;
       align-items:center;
       margin-bottom:8px;
-      flex-wrap:wrap
+      flex-wrap:wrap;
     }
 
     label{
@@ -148,22 +147,12 @@
     select:disabled,
     input:disabled{
       opacity:0.55;
-      cursor:not-allowed
+      cursor:not-allowed;
     }
 
-    .small{
-      font-size:12px;
-      color:#555
-    }
-
-    .muted{
-      color:var(--muted);
-      font-size:13px
-    }
-
-    .hidden{
-      display:none
-    }
+    .small{ font-size:12px; color:#555; }
+    .muted{ color:var(--muted); font-size:13px; }
+    .hidden{ display:none; }
 
     .notice{
       padding:11px 13px;
@@ -176,7 +165,7 @@
     .kpi{
       display:flex;
       gap:10px;
-      flex-wrap:wrap
+      flex-wrap:wrap;
     }
 
     .kpi .box{
@@ -193,7 +182,7 @@
       display:grid;
       grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
       gap:12px;
-      margin-top:12px
+      margin-top:12px;
     }
 
     .card{
@@ -214,7 +203,7 @@
       display:grid;
       grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
       gap:8px;
-      margin-top:8px
+      margin-top:8px;
     }
 
     .checkbox-item{
@@ -261,7 +250,7 @@
       border-right:1px solid #eef2f6;
       border-bottom:1px solid #eef2f6;
       text-align:center;
-      padding:9px 10px
+      padding:9px 10px;
     }
 
     tr:last-child td{ border-bottom:none; }
@@ -283,8 +272,7 @@
       letter-spacing:-0.015em;
     }
 
-    td:first-child,
-    th:first-child{
+    td:first-child, th:first-child{
       font-family:var(--font-data);
       font-weight:900;
     }
@@ -316,43 +304,12 @@
       letter-spacing:-0.01em;
     }
 
-    .pillrow{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin-top:8px
-    }
-
-    .pill{
-      padding:8px 12px;
-      border-radius:999px;
-      border:1px solid #d9dee7;
-      min-width:44px;
-      text-align:center;
-      background:#fff;
-      font-family:var(--font-data);
-      font-weight:900;
-      font-size:14px;
-      letter-spacing:-0.01em;
-      box-shadow:var(--shadow-soft);
-    }
-
-    .pill.win1{
-      background:#e6ffed;
-      border-color:#8be28a
-    }
-
-    .pill.win2{
-      background:#ffeef0;
-      border-color:#ffb3ba
-    }
-
     .flex-between{
       display:flex;
       justify-content:space-between;
       align-items:center;
       gap:10px;
-      flex-wrap:wrap
+      flex-wrap:wrap;
     }
 
     .subtle{
@@ -367,7 +324,7 @@
       display:flex;
       gap:8px;
       align-items:center;
-      flex-wrap:wrap
+      flex-wrap:wrap;
     }
 
     #setupTitle,
@@ -440,18 +397,11 @@
     </div>
   </header>
 
-  <section id="home" class="panel">
+  <section id="home" class="panel hidden">
     <div class="flex-between">
       <div>
         <strong>Game Selection</strong>
         <div class="small muted">Select the game and players for today.</div>
-      </div>
-      <div class="admin-box">
-        <label for="adminPassword" style="min-width:auto"><strong>Admin Login</strong></label>
-        <input id="adminPassword" type="password" placeholder="Enter password" />
-        <button id="adminLoginBtn" class="primary">Unlock</button>
-        <button id="adminLogoutBtn">Lock</button>
-        <span id="adminMsg" class="muted"></span>
       </div>
     </div>
 
@@ -518,7 +468,7 @@
         Home is ready, and Beach Match Play, Wolf, and Bingo Bango Bongo are fully coded. You can add the other game logic later.
       </div>
       <div class="row" style="margin-top:10px">
-        <button id="backHome">Back to Home</button>
+        <button id="backBoard">Back to Scoreboard</button>
       </div>
     </div>
   </section>
@@ -539,10 +489,17 @@
     <div id="entryContent" style="margin-top:10px"></div>
   </section>
 
-  <section id="board" class="panel hidden">
+  <section id="board" class="panel">
     <div class="flex-between">
       <strong id="boardTitle">Scoreboard</strong>
-      <button id="refreshBoard">Refresh</button>
+      <div class="admin-box">
+        <label for="adminPassword" style="min-width:auto"><strong>Admin Login</strong></label>
+        <input id="adminPassword" type="password" placeholder="Enter password" />
+        <button id="adminLoginBtn" class="primary">Unlock</button>
+        <button id="adminLogoutBtn">Lock</button>
+        <button id="refreshBoard">Refresh</button>
+        <span id="adminMsg" class="muted"></span>
+      </div>
     </div>
     <div id="boardContent" style="margin-top:10px"></div>
   </section>
@@ -552,7 +509,7 @@
     'Tucker','Clint','Brian','Jeff','Logan','Dale','Matt','Kevin','Tyler','Daniel','Adam A','Tom','Adam R'
   ];
   const MONEY_PER_PLAYER_PER_MATCH = 10;
-  const LOCAL_KEY = 'golf_games_v4';
+  const LOCAL_KEY = 'golf_games_v5';
   const ADMIN_PASSWORD = 'Saywhen21';
 
   const GAME_OPTIONS = {
@@ -709,6 +666,13 @@
     return `${sign}$${n}`;
   }
 
+  function updateAdminVisibility(){
+    $('nav-home').classList.toggle('hidden', !isAdmin);
+    $('nav-setup').classList.toggle('hidden', !isAdmin);
+    $('nav-entry').classList.toggle('hidden', !isAdmin);
+    $('nav-board').classList.remove('hidden');
+  }
+
   function setActiveNav(activeId){
     ['nav-home','nav-setup','nav-entry','nav-board'].forEach(id=>{
       const btn = $(id);
@@ -717,16 +681,23 @@
   }
 
   function show(sectionId){
+    const allowed = isAdmin ? ['home','placeholder','setup','entry','board'] : ['board','placeholder'];
     ['home','placeholder','setup','entry','board'].forEach(id => $(id).classList.add('hidden'));
-    $(sectionId).classList.remove('hidden');
 
-    if(sectionId === 'home') setActiveNav('nav-home');
-    if(sectionId === 'setup') setActiveNav('nav-setup');
-    if(sectionId === 'entry') setActiveNav('nav-entry');
-    if(sectionId === 'board') setActiveNav('nav-board');
+    const target = allowed.includes(sectionId) ? sectionId : 'board';
+    $(target).classList.remove('hidden');
+
+    if(target === 'home') setActiveNav('nav-home');
+    if(target === 'setup') setActiveNav('nav-setup');
+    if(target === 'entry') setActiveNav('nav-entry');
+    if(target === 'board' || target === 'placeholder') setActiveNav('nav-board');
   }
 
   function navigateGameSection(sectionId){
+    if(!isAdmin){
+      show('board');
+      return;
+    }
     const game = currentGame();
     if(game === 'beach_match_play' || game === 'wolf' || game === 'bingo_bango_bongo'){
       show(sectionId);
@@ -740,7 +711,7 @@
     const div = document.createElement('div');
     div.className = 'notice';
     div.style.marginTop = '10px';
-    div.textContent = 'Viewing is open to everyone. Enter the Admin Login password on Home to make changes.';
+    div.textContent = 'Viewing is open to everyone. Enter the Admin Login password on the Scoreboard page to unlock Home, Match Setup, and Score Entry.';
     return div;
   }
 
@@ -760,6 +731,7 @@
     } else if(!msg.textContent){
       msg.textContent = 'View-only mode';
     }
+    updateAdminVisibility();
   }
 
   function adminLogin(){
@@ -770,6 +742,7 @@
       $('adminPassword').value = '';
       $('adminMsg').textContent = 'Admin unlocked';
       renderAll();
+      show('home');
     } else {
       $('adminMsg').textContent = 'Incorrect password';
       setTimeout(()=> {
@@ -785,6 +758,7 @@
     $('adminPassword').value = '';
     $('adminMsg').textContent = 'View-only mode';
     renderAll();
+    show('board');
     syncAdminUI();
   }
 
@@ -819,7 +793,6 @@
 
     $('gameSelect').disabled = !isAdmin;
     $('saveHome').disabled = !isAdmin;
-    syncAdminUI();
   }
 
   function saveHomeSelection(){
@@ -898,7 +871,7 @@
       beachState().currentHole = 1;
       saveState();
       renderAll();
-      show('setup');
+      if(isAdmin) show('setup');
     }
   }
 
@@ -935,7 +908,7 @@
     lastAction = null;
     saveState();
     renderAll();
-    show('setup');
+    if(isAdmin) show('setup');
   }
 
   function beachCollectScores(){
@@ -1071,7 +1044,6 @@
       lock.textContent = 'This match is locked because the previous match is not complete.';
       wrap.appendChild(lock);
     }
-    if(!isAdmin) wrap.appendChild(requireAdminMessage());
 
     const row1 = document.createElement('div');
     row1.className = 'row';
@@ -1180,8 +1152,6 @@
       ? `Match ${m} — Hole ${holeDisplay} | Team 1: ${setup.team1.join(' + ')} vs Team 2: ${setup.team2.join(' + ')}`
       : `Match ${m} — Hole ${holeDisplay} | Teams not set yet`;
     wrap.appendChild(title);
-
-    if(!isAdmin) wrap.appendChild(requireAdminMessage());
 
     const inputs = document.createElement('div');
     wrap.appendChild(inputs);
@@ -1421,7 +1391,7 @@
     lastAction = null;
     saveState();
     renderAll();
-    show('setup');
+    if(isAdmin) show('setup');
   }
 
   function wolfCollectHoleScores(){
@@ -1496,8 +1466,6 @@
     note.className = 'notice';
     note.innerHTML = `<strong>How it works:</strong> The first player in the order is the wolf on Hole 1. The order rotates each hole for all 18 holes.`;
     wrap.appendChild(note);
-
-    if(!isAdmin) wrap.appendChild(requireAdminMessage());
 
     const orderBox = document.createElement('div');
     orderBox.style.marginTop = '10px';
@@ -1613,8 +1581,6 @@
     title.style.margin = '8px 0';
     title.innerHTML = `<strong>Hole ${hole}</strong> — Wolf: <strong>${wolf}</strong>`;
     wrap.appendChild(title);
-
-    if(!isAdmin) wrap.appendChild(requireAdminMessage());
 
     const existing = (wolfState().holes[wolfHoleKey(hole)] && wolfState().holes[wolfHoleKey(hole)].scores)
       ? wolfState().holes[wolfHoleKey(hole)].scores
@@ -1774,7 +1740,7 @@
     lastAction = null;
     saveState();
     renderAll();
-    show('setup');
+    if(isAdmin) show('setup');
   }
 
   function bbbCollectHoleScores(){
@@ -1847,8 +1813,6 @@
     playerBox.innerHTML = `<strong>Players today:</strong> ${selectedPlayers().join(', ') || 'None selected'}`;
     wrap.appendChild(playerBox);
 
-    if(!isAdmin) wrap.appendChild(requireAdminMessage());
-
     const btnRow = document.createElement('div');
     btnRow.className = 'row';
     btnRow.style.marginTop = '10px';
@@ -1898,8 +1862,6 @@
     title.style.margin = '8px 0';
     title.innerHTML = `<strong>Hole ${hole}</strong>`;
     wrap.appendChild(title);
-
-    if(!isAdmin) wrap.appendChild(requireAdminMessage());
 
     const existing = (bbbState().holes[bbbHoleKey(hole)] && bbbState().holes[bbbHoleKey(hole)].scores)
       ? bbbState().holes[bbbHoleKey(hole)].scores
@@ -2067,10 +2029,10 @@
   function renderAll(){
     renderHome();
     renderPlaceholder();
-    if(currentGame() === 'beach_match_play' || currentGame() === 'wolf' || currentGame() === 'bingo_bango_bongo'){
+    renderBoardPage();
+    if(isAdmin){
       renderSetupPage();
       renderEntryPage();
-      renderBoardPage();
     }
     syncAdminUI();
   }
@@ -2078,10 +2040,10 @@
   $('nav-home').addEventListener('click', ()=> show('home'));
   $('nav-setup').addEventListener('click', ()=> navigateGameSection('setup'));
   $('nav-entry').addEventListener('click', ()=> navigateGameSection('entry'));
-  $('nav-board').addEventListener('click', ()=> navigateGameSection('board'));
+  $('nav-board').addEventListener('click', ()=> show('board'));
 
   $('saveHome').addEventListener('click', saveHomeSelection);
-  $('backHome').addEventListener('click', ()=> show('home'));
+  $('backBoard').addEventListener('click', ()=> show('board'));
   $('refreshBoard').addEventListener('click', renderAll);
 
   $('adminLoginBtn').addEventListener('click', adminLogin);
@@ -2094,7 +2056,7 @@
     await loadState();
     startLiveSync();
     renderAll();
-    show('home');
+    show('board');
   })();
 </script>
 </body>
