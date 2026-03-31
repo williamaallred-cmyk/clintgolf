@@ -42,7 +42,7 @@
       font-size:18px;
       max-width:1120px;
       margin:0 auto;
-      padding:14px;
+      padding:14px 14px 120px 14px;
       background:var(--bg);
       color:var(--text);
       line-height:1.4;
@@ -388,7 +388,9 @@
     #bmp_hole,
     #wolf_hole,
     #bbb_hole,
-    #gameSelect{
+    #strokes_hole,
+    #gameSelect,
+    #courseSelect{
       font-family:var(--font-data);
       font-weight:900;
       font-size:20px;
@@ -425,10 +427,47 @@
       box-shadow:var(--shadow-soft);
     }
 
+    .bottom-bar{
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      background:#ffffff;
+      border-top:1px solid var(--border);
+      box-shadow:0 -6px 20px rgba(20,33,26,.08);
+      padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+      z-index:1000;
+    }
+
+    .bottom-bar-inner{
+      max-width:1120px;
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .bottom-nav{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .bottom-admin{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .bottom-nav button{
+      flex:1 1 140px;
+    }
+
     @media (max-width: 700px){
       body{
         font-size:20px;
-        padding:10px;
+        padding:10px 10px 140px 10px;
       }
 
       h1{
@@ -491,6 +530,10 @@
       th{
         font-size:12px;
       }
+
+      .bottom-bar-inner{
+        gap:8px;
+      }
     }
   </style>
   <link rel="icon" href="data:,">
@@ -501,19 +544,13 @@
       <h1>Golf Games</h1>
       <div class="small muted">Choose your game, choose your players, and start scoring.</div>
     </div>
-    <div class="controls">
-      <button id="nav-home">Home</button>
-      <button id="nav-setup">Match Setup</button>
-      <button id="nav-entry">Score Entry</button>
-      <button id="nav-board">Scoreboard</button>
-    </div>
   </header>
 
   <section id="home" class="panel hidden">
     <div class="flex-between">
       <div>
         <strong>Game Selection</strong>
-        <div class="small muted">Select the game and players for today.</div>
+        <div class="small muted">Select the game, course, and players for today.</div>
       </div>
     </div>
 
@@ -525,6 +562,13 @@
         <option value="strokes">Strokes</option>
         <option value="beach_match_play">Beach Match Play</option>
         <option value="skins">Skins</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label for="courseSelect">Course</label>
+      <select id="courseSelect">
+        <option value="the_woods">The Woods</option>
       </select>
       <button id="saveHome" class="primary">Save Selection</button>
       <span id="homeMsg" class="muted"></span>
@@ -557,7 +601,7 @@
       <div class="card">
         <strong>Strokes</strong>
         <div class="small muted" style="margin-top:6px">
-          Placeholder for future code.
+          18 holes. Enter strokes for each player. Lowest total strokes leads.
         </div>
       </div>
       <div class="card">
@@ -569,7 +613,7 @@
     </div>
 
     <div class="small muted" style="margin-top:12px">
-      <strong>Built now:</strong> Beach Match Play, Wolf, and Bingo Bango Bongo.
+      <strong>Built now:</strong> Beach Match Play, Wolf, Bingo Bango Bongo, and Strokes.
     </div>
   </section>
 
@@ -577,7 +621,7 @@
     <div class="notice">
       <strong id="placeholderTitle">This game is not built yet.</strong>
       <div class="small muted" style="margin-top:6px">
-        Home is ready, and Beach Match Play, Wolf, and Bingo Bango Bongo are fully coded. You can add the other game logic later.
+        Home is ready, and Beach Match Play, Wolf, Bingo Bango Bongo, and Strokes are fully coded.
       </div>
       <div class="row" style="margin-top:10px">
         <button id="backBoard">Back to Scoreboard</button>
@@ -604,24 +648,35 @@
   <section id="board" class="panel">
     <div class="flex-between">
       <strong id="boardTitle">Scoreboard</strong>
-      <div class="admin-box">
+      <button id="refreshBoard">Refresh</button>
+    </div>
+    <div id="boardContent" style="margin-top:10px"></div>
+  </section>
+
+  <div class="bottom-bar">
+    <div class="bottom-bar-inner">
+      <div class="bottom-nav">
+        <button id="nav-home">Home</button>
+        <button id="nav-setup">Match Setup</button>
+        <button id="nav-entry">Score Entry</button>
+        <button id="nav-board">Scoreboard</button>
+      </div>
+      <div class="bottom-admin">
         <label for="adminPassword" style="min-width:auto"><strong>Admin Login</strong></label>
         <input id="adminPassword" type="password" placeholder="Enter password" />
         <button id="adminLoginBtn" class="primary">Unlock</button>
         <button id="adminLogoutBtn">Lock</button>
-        <button id="refreshBoard">Refresh</button>
         <span id="adminMsg" class="muted"></span>
       </div>
     </div>
-    <div id="boardContent" style="margin-top:10px"></div>
-  </section>
+  </div>
 
 <script type="module">
   const ALL_PLAYERS = [
     'Tucker','Clint','Brian','Jeff','Logan','Dale','Matt','Kevin','Tyler','Daniel','Adam A','Tom','Adam R'
   ];
   const MONEY_PER_PLAYER_PER_MATCH = 10;
-  const LOCAL_KEY = 'golf_games_v5';
+  const LOCAL_KEY = 'golf_games_v6';
   const ADMIN_PASSWORD = 'Saywhen21';
 
   const GAME_OPTIONS = {
@@ -630,6 +685,10 @@
     strokes: 'Strokes',
     beach_match_play: 'Beach Match Play',
     skins: 'Skins'
+  };
+
+  const COURSE_OPTIONS = {
+    the_woods: 'The Woods'
   };
 
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -655,6 +714,7 @@
   let state = {
     home: {
       game: 'beach_match_play',
+      course: 'the_woods',
       selectedPlayers: ['Tucker','Clint','Brian','Jeff']
     },
     beachMatchPlay: {
@@ -670,6 +730,10 @@
     bingoBangoBongo: {
       currentHole: 1,
       holes: {}
+    },
+    strokes: {
+      currentHole: 1,
+      holes: {}
     }
   };
 
@@ -679,9 +743,10 @@
 
   function ensureState(){
     if(!state.home){
-      state.home = { game: 'beach_match_play', selectedPlayers: ['Tucker','Clint','Brian','Jeff'] };
+      state.home = { game: 'beach_match_play', course: 'the_woods', selectedPlayers: ['Tucker','Clint','Brian','Jeff'] };
     }
     if(!state.home.game) state.home.game = 'beach_match_play';
+    if(!state.home.course) state.home.course = 'the_woods';
     if(!Array.isArray(state.home.selectedPlayers) || !state.home.selectedPlayers.length){
       state.home.selectedPlayers = ['Tucker','Clint','Brian','Jeff'];
     }
@@ -712,6 +777,14 @@
     if(!state.bingoBangoBongo.holes) state.bingoBangoBongo.holes = {};
     if(!state.bingoBangoBongo.currentHole || state.bingoBangoBongo.currentHole < 1 || state.bingoBangoBongo.currentHole > 18){
       state.bingoBangoBongo.currentHole = 1;
+    }
+
+    if(!state.strokes){
+      state.strokes = { currentHole: 1, holes: {} };
+    }
+    if(!state.strokes.holes) state.strokes.holes = {};
+    if(!state.strokes.currentHole || state.strokes.currentHole < 1 || state.strokes.currentHole > 18){
+      state.strokes.currentHole = 1;
     }
   }
 
@@ -773,6 +846,10 @@
     return state.home.selectedPlayers || [];
   }
 
+  function currentCourse(){
+    return state.home.course || 'the_woods';
+  }
+
   function formatMoney(n){
     const sign = n > 0 ? "+" : "";
     return `${sign}$${n}`;
@@ -811,7 +888,7 @@
       return;
     }
     const game = currentGame();
-    if(game === 'beach_match_play' || game === 'wolf' || game === 'bingo_bango_bongo'){
+    if(game === 'beach_match_play' || game === 'wolf' || game === 'bingo_bango_bongo' || game === 'strokes'){
       show(sectionId);
     } else {
       renderPlaceholder();
@@ -868,6 +945,7 @@
 
   function renderHome(){
     $('gameSelect').value = currentGame();
+    $('courseSelect').value = currentCourse();
 
     const wrap = $('playerCheckboxes');
     wrap.innerHTML = '';
@@ -896,6 +974,7 @@
     });
 
     $('gameSelect').disabled = !isAdmin;
+    $('courseSelect').disabled = !isAdmin;
     $('saveHome').disabled = !isAdmin;
   }
 
@@ -907,6 +986,7 @@
     }
 
     const game = $('gameSelect').value;
+    const course = $('courseSelect').value;
     const checked = [...document.querySelectorAll('#playerCheckboxes input[type="checkbox"]:checked')].map(x=>x.value);
 
     if(!checked.length){
@@ -916,6 +996,7 @@
     }
 
     state.home.game = game;
+    state.home.course = course;
     state.home.selectedPlayers = checked;
 
     const wolfInvalid = !state.wolf.order.length || state.wolf.order.some(p => !checked.includes(p)) || state.wolf.order.length !== checked.length;
@@ -929,7 +1010,7 @@
 
     renderAll();
 
-    if(game === 'beach_match_play' || game === 'wolf' || game === 'bingo_bango_bongo') show('setup');
+    if(game === 'beach_match_play' || game === 'wolf' || game === 'bingo_bango_bongo' || game === 'strokes') show('setup');
     else show('placeholder');
   }
 
@@ -938,6 +1019,7 @@
     $('placeholderTitle').textContent = `${gameName} is not built yet.`;
   }
 
+  // ---------------- BEACH MATCH PLAY ----------------
   function beachState(){ return state.beachMatchPlay; }
   function beachCurrentMatch(){ return beachState().currentMatch; }
 
@@ -1029,7 +1111,7 @@
       const val = (sel.value || '').trim();
       if(val === '') throw new Error('All 4 scores are required.');
       const n = Number(val);
-      if(!Number.isFinite(n) || n < 1 || n > 15) throw new Error('Scores must be 1–15.');
+      if(!Number.isFinite(n) || n<1 || n>15) throw new Error('Scores must be 1–15.');
       scores[p] = n;
     }
 
@@ -1451,6 +1533,7 @@
     }
   }
 
+  // ---------------- WOLF ----------------
   function wolfState(){ return state.wolf; }
   function wolfHoleKey(hole){ return `h${hole}`; }
 
@@ -1830,6 +1913,7 @@
     wrap.appendChild(holeTable);
   }
 
+  // ---------------- BINGO BANGO BONGO ----------------
   function bbbState(){ return state.bingoBangoBongo; }
   function bbbHoleKey(hole){ return `h${hole}`; }
 
@@ -2109,22 +2193,313 @@
     wrap.appendChild(holeTable);
   }
 
+  // ---------------- STROKES ----------------
+  function strokesState(){ return state.strokes; }
+  function strokesHoleKey(hole){ return `h${hole}`; }
+
+  function strokesReset(){
+    const sure = confirm("Reset Strokes?\n\nThis clears all Strokes hole scores.");
+    if(!sure) return;
+    strokesState().holes = {};
+    strokesState().currentHole = 1;
+    lastAction = null;
+    saveState();
+    renderAll();
+    if(isAdmin) show('setup');
+  }
+
+  function strokesCollectHoleScores(){
+    const hole = Number($('strokes_hole').value);
+    const scores = {};
+
+    for(const p of selectedPlayers()){
+      const sel = $(`strokes_score_${p}`);
+      const val = sel.value;
+      if(val === '') throw new Error('Choose a stroke value for every player.');
+      const n = Number(val);
+      if(!Number.isFinite(n) || n < 1 || n > 20) throw new Error('Strokes must be 1–20.');
+      scores[p] = n;
+    }
+
+    return { hole, scores };
+  }
+
+  function strokesSaveHole(){
+    const { hole, scores } = strokesCollectHoleScores();
+    const key = strokesHoleKey(hole);
+    const prev = strokesState().holes[key] ? JSON.parse(JSON.stringify(strokesState().holes[key])) : null;
+    lastAction = { game: 'strokes', key, prev };
+    strokesState().holes[key] = { scores, updatedAt: new Date().toISOString() };
+    strokesState().currentHole = hole < 18 ? hole + 1 : 18;
+    saveState();
+    renderAll();
+  }
+
+  function strokesUndo(){
+    if(!lastAction || lastAction.game !== 'strokes') return;
+    const { key, prev } = lastAction;
+    if(prev) strokesState().holes[key] = prev;
+    else delete strokesState().holes[key];
+    lastAction = null;
+    saveState();
+    renderAll();
+  }
+
+  function strokesComputeTotals(){
+    const totals = {};
+    selectedPlayers().forEach(p => totals[p] = 0);
+
+    for(let h=1; h<=18; h++){
+      const entry = strokesState().holes[strokesHoleKey(h)];
+      if(!entry || !entry.scores) continue;
+      for(const p of selectedPlayers()){
+        totals[p] += Number(entry.scores[p] || 0);
+      }
+    }
+
+    return totals;
+  }
+
+  function renderStrokesSetup(){
+    $('setupTitle').textContent = 'Strokes Setup';
+    $('setupSubtitle').textContent = 'This game is ready. Use Score Entry to start entering strokes.';
+
+    const wrap = $('setupContent');
+    wrap.innerHTML = '';
+
+    const notice = document.createElement('div');
+    notice.className = 'notice';
+    notice.innerHTML = `<strong>Strokes</strong><br>18 holes. Enter each player’s strokes for each hole. Lowest total strokes leads the leaderboard.`;
+    wrap.appendChild(notice);
+
+    const courseBox = document.createElement('div');
+    courseBox.className = 'subtle';
+    courseBox.style.marginTop = '10px';
+    courseBox.innerHTML = `<strong>Course:</strong> ${COURSE_OPTIONS[currentCourse()] || 'The Woods'}`;
+    wrap.appendChild(courseBox);
+
+    const playerBox = document.createElement('div');
+    playerBox.className = 'subtle';
+    playerBox.style.marginTop = '10px';
+    playerBox.innerHTML = `<strong>Players today:</strong> ${selectedPlayers().join(', ') || 'None selected'}`;
+    wrap.appendChild(playerBox);
+
+    const btnRow = document.createElement('div');
+    btnRow.className = 'row';
+    btnRow.style.marginTop = '10px';
+    btnRow.innerHTML = `
+      <button id="strokesReset" class="danger">Reset Strokes</button>
+      <span class="muted">Current hole: <span class="score-pop">${strokesState().currentHole}</span></span>
+    `;
+    wrap.appendChild(btnRow);
+
+    $('strokesReset').disabled = !isAdmin;
+    $('strokesReset').addEventListener('click', strokesReset);
+  }
+
+  function renderStrokesEntry(){
+    $('entryTitle').textContent = 'Strokes Score Entry';
+    $('entrySubtitle').textContent = 'Enter strokes for each player on the hole.';
+
+    const wrap = $('entryContent');
+    wrap.innerHTML = '';
+
+    if(!selectedPlayers().length){
+      const note = document.createElement('div');
+      note.className = 'notice';
+      note.textContent = 'Select players on Home first.';
+      wrap.appendChild(note);
+      return;
+    }
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<label for="strokes_hole">Hole</label><select id="strokes_hole"></select><span id="strokesMsg" class="muted"></span>`;
+    wrap.appendChild(row);
+
+    for(let h=1; h<=18; h++) $('strokes_hole').appendChild(option(String(h), `Hole ${h}`));
+    $('strokes_hole').value = String(strokesState().currentHole || 1);
+    $('strokes_hole').disabled = !isAdmin;
+
+    const hole = Number($('strokes_hole').value || 1);
+
+    const chip = document.createElement('div');
+    chip.className = 'active-hole-chip';
+    chip.textContent = `Active Hole ${hole}`;
+    wrap.appendChild(chip);
+
+    const title = document.createElement('div');
+    title.className = 'subtle';
+    title.style.margin = '8px 0';
+    title.innerHTML = `<strong>Hole ${hole}</strong> — Course: <strong>${COURSE_OPTIONS[currentCourse()] || 'The Woods'}</strong>`;
+    wrap.appendChild(title);
+
+    const existing = (strokesState().holes[strokesHoleKey(hole)] && strokesState().holes[strokesHoleKey(hole)].scores)
+      ? strokesState().holes[strokesHoleKey(hole)].scores
+      : {};
+
+    const inputs = document.createElement('div');
+    selectedPlayers().forEach(name=>{
+      const row = document.createElement('div');
+      row.className = 'player-input';
+
+      const span = document.createElement('span');
+      span.textContent = name;
+
+      const sel = document.createElement('select');
+      sel.id = `strokes_score_${name}`;
+      sel.appendChild(option('', ''));
+      for(let v=1; v<=20; v++) sel.appendChild(option(String(v), String(v)));
+      if(existing[name] != null) sel.value = String(existing[name]);
+      sel.disabled = !isAdmin;
+
+      row.appendChild(span);
+      row.appendChild(sel);
+      inputs.appendChild(row);
+    });
+    wrap.appendChild(inputs);
+
+    const btnRow = document.createElement('div');
+    btnRow.className = 'row';
+    btnRow.style.marginTop = '10px';
+    btnRow.innerHTML = `<button id="strokesSaveHole" class="primary">Save Hole</button><button id="strokesUndo">Undo</button>`;
+    wrap.appendChild(btnRow);
+
+    $('strokesSaveHole').disabled = !isAdmin;
+    $('strokesUndo').disabled = !isAdmin;
+
+    $('strokes_hole').addEventListener('change', ()=>{
+      strokesState().currentHole = Number($('strokes_hole').value);
+      renderAll();
+    });
+
+    $('strokesSaveHole').addEventListener('click', ()=>{
+      try{
+        strokesSaveHole();
+        $('strokesMsg').textContent = 'Saved.';
+        setTimeout(()=> $('strokesMsg').textContent = '', 1200);
+      }catch(e){
+        $('strokesMsg').textContent = e.message;
+      }
+    });
+
+    $('strokesUndo').addEventListener('click', ()=>{
+      strokesUndo();
+      $('strokesMsg').textContent = 'Undone.';
+      setTimeout(()=> $('strokesMsg').textContent = '', 1000);
+    });
+
+    const tip = document.createElement('div');
+    tip.className = 'small muted';
+    tip.style.marginTop = '6px';
+    tip.textContent = 'Enter strokes for every player. After you click Save Hole, the app automatically advances to the next hole.';
+    wrap.appendChild(tip);
+  }
+
+  function renderStrokesBoard(){
+    $('boardTitle').textContent = 'Strokes Scoreboard';
+
+    const wrap = $('boardContent');
+    wrap.innerHTML = '';
+
+    const totals = strokesComputeTotals();
+    const rows = Object.entries(totals)
+      .sort((a,b)=> a[1] - b[1] || a[0].localeCompare(b[0]));
+
+    const leaderboard = document.createElement('div');
+    leaderboard.className = 'leaderboard-card';
+
+    const lbTitle = document.createElement('div');
+    lbTitle.style.fontWeight = '900';
+    lbTitle.style.marginBottom = '8px';
+    lbTitle.textContent = 'Strokes Leaderboard';
+    leaderboard.appendChild(lbTitle);
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+    ['Rank','Player','Total Strokes'].forEach(t=>{
+      const th=document.createElement('th');
+      th.textContent=t;
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    rows.forEach(([name,total], idx)=>{
+      const tr = document.createElement('tr');
+      const tdR = document.createElement('td'); tdR.textContent = String(idx+1);
+      const tdN = document.createElement('td'); tdN.textContent = name; tdN.style.textAlign='left';
+      const tdP = document.createElement('td'); tdP.textContent = String(total);
+      tr.appendChild(tdR);
+      tr.appendChild(tdN);
+      tr.appendChild(tdP);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    leaderboard.appendChild(table);
+    wrap.appendChild(leaderboard);
+
+    const summary = document.createElement('div');
+    summary.style.fontWeight = '900';
+    summary.style.margin = '12px 0 6px';
+    summary.textContent = 'Hole-by-Hole Strokes';
+    wrap.appendChild(summary);
+
+    const holeTable = document.createElement('table');
+    const holeHead = document.createElement('thead');
+    const holeHr = document.createElement('tr');
+    ['Hole', ...selectedPlayers()].forEach(t=>{
+      const th=document.createElement('th');
+      th.textContent=t;
+      holeHr.appendChild(th);
+    });
+    holeHead.appendChild(holeHr);
+    holeTable.appendChild(holeHead);
+
+    const holeBody = document.createElement('tbody');
+    for(let h=1; h<=18; h++){
+      const tr = document.createElement('tr');
+      const tdH = document.createElement('td');
+      tdH.textContent = String(h);
+      tr.appendChild(tdH);
+
+      const entry = strokesState().holes[strokesHoleKey(h)];
+      const scores = entry && entry.scores ? entry.scores : {};
+
+      selectedPlayers().forEach(p=>{
+        const td = document.createElement('td');
+        td.textContent = scores[p] != null ? String(scores[p]) : '-';
+        tr.appendChild(td);
+      });
+
+      holeBody.appendChild(tr);
+    }
+    holeTable.appendChild(holeBody);
+    wrap.appendChild(holeTable);
+  }
+
+  // ---------------- PAGE ROUTING ----------------
   function renderSetupPage(){
     if(currentGame() === 'beach_match_play') renderBeachSetup();
     else if(currentGame() === 'wolf') renderWolfSetup();
     else if(currentGame() === 'bingo_bango_bongo') renderBBBSetup();
+    else if(currentGame() === 'strokes') renderStrokesSetup();
   }
 
   function renderEntryPage(){
     if(currentGame() === 'beach_match_play') renderBeachEntry();
     else if(currentGame() === 'wolf') renderWolfEntry();
     else if(currentGame() === 'bingo_bango_bongo') renderBBBEntry();
+    else if(currentGame() === 'strokes') renderStrokesEntry();
   }
 
   function renderBoardPage(){
     if(currentGame() === 'beach_match_play') renderBeachBoard();
     else if(currentGame() === 'wolf') renderWolfBoard();
     else if(currentGame() === 'bingo_bango_bongo') renderBBBBoard();
+    else if(currentGame() === 'strokes') renderStrokesBoard();
   }
 
   function renderAll(){
