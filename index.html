@@ -66,13 +66,6 @@
       line-height:1.05;
     }
 
-    .controls{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      flex-wrap:wrap;
-    }
-
     .panel{
       background:var(--panel);
       border:1px solid var(--border);
@@ -320,11 +313,12 @@
       display:flex;
       align-items:center;
       gap:10px;
-      margin-bottom:10px;
+      margin-bottom:12px;
       padding:7px 0;
+      flex-wrap:wrap;
     }
 
-    .player-input span{
+    .player-input span.player-name{
       width:150px;
       flex:0 0 150px;
       overflow:hidden;
@@ -333,14 +327,6 @@
       font-weight:800;
       color:var(--text);
       font-size:18px;
-    }
-
-    .player-input select{
-      width:110px;
-      font-family:var(--font-data);
-      font-weight:900;
-      font-size:24px;
-      text-align:center;
     }
 
     .flex-between{
@@ -464,6 +450,48 @@
       flex:1 1 140px;
     }
 
+    .stepper{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .stepper button{
+      width:58px;
+      min-width:58px;
+      height:58px;
+      padding:0;
+      font-size:28px;
+      line-height:1;
+      border-radius:16px;
+    }
+
+    .stepper-value-wrap{
+      min-width:88px;
+      text-align:center;
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:8px 10px;
+      box-shadow:var(--shadow-soft);
+    }
+
+    .stepper-value{
+      display:block;
+      font-family:var(--font-data);
+      font-size:34px;
+      font-weight:900;
+      line-height:1;
+    }
+
+    .stepper-par{
+      display:block;
+      font-size:13px;
+      color:var(--muted);
+      margin-top:4px;
+      font-weight:700;
+    }
+
     @media (max-width: 700px){
       body{
         font-size:20px;
@@ -505,15 +533,10 @@
         align-items:flex-start;
       }
 
-      .player-input span{
+      .player-input span.player-name{
         font-size:19px;
         width:130px;
         flex:0 0 130px;
-      }
-
-      .player-input select{
-        width:112px;
-        font-size:24px;
       }
 
       .small,
@@ -533,6 +556,16 @@
 
       .bottom-bar-inner{
         gap:8px;
+      }
+
+      .stepper button{
+        width:56px;
+        min-width:56px;
+        height:56px;
+      }
+
+      .stepper-value{
+        font-size:32px;
       }
     }
   </style>
@@ -676,7 +709,7 @@
     'Tucker','Clint','Brian','Jeff','Logan','Dale','Matt','Kevin','Tyler','Daniel','Adam A','Tom','Adam R'
   ];
   const MONEY_PER_PLAYER_PER_MATCH = 10;
-  const LOCAL_KEY = 'golf_games_v6';
+  const LOCAL_KEY = 'golf_games_v7';
   const ADMIN_PASSWORD = 'Saywhen21';
 
   const GAME_OPTIONS = {
@@ -687,8 +720,11 @@
     skins: 'Skins'
   };
 
-  const COURSE_OPTIONS = {
-    the_woods: 'The Woods'
+  const COURSES = {
+    the_woods: {
+      name: 'The Woods',
+      pars: [4,3,4,4,5,4,3,4,5,4,3,5,5,4,3,5,3,4]
+    }
   };
 
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -746,7 +782,7 @@
       state.home = { game: 'beach_match_play', course: 'the_woods', selectedPlayers: ['Tucker','Clint','Brian','Jeff'] };
     }
     if(!state.home.game) state.home.game = 'beach_match_play';
-    if(!state.home.course) state.home.course = 'the_woods';
+    if(!state.home.course || !COURSES[state.home.course]) state.home.course = 'the_woods';
     if(!Array.isArray(state.home.selectedPlayers) || !state.home.selectedPlayers.length){
       state.home.selectedPlayers = ['Tucker','Clint','Brian','Jeff'];
     }
@@ -755,37 +791,21 @@
       state.beachMatchPlay = { currentMatch: 1, currentHole: 1, matches: {} };
     }
     for(let m=1;m<=6;m++) if(!state.beachMatchPlay.matches[m]) state.beachMatchPlay.matches[m] = blankBeachMatch();
-    if(!state.beachMatchPlay.currentMatch || state.beachMatchPlay.currentMatch < 1 || state.beachMatchPlay.currentMatch > 6){
-      state.beachMatchPlay.currentMatch = 1;
-    }
-    if(!state.beachMatchPlay.currentHole || state.beachMatchPlay.currentHole < 1 || state.beachMatchPlay.currentHole > 9){
-      state.beachMatchPlay.currentHole = 1;
-    }
+    if(!state.beachMatchPlay.currentMatch || state.beachMatchPlay.currentMatch < 1 || state.beachMatchPlay.currentMatch > 6) state.beachMatchPlay.currentMatch = 1;
+    if(!state.beachMatchPlay.currentHole || state.beachMatchPlay.currentHole < 1 || state.beachMatchPlay.currentHole > 9) state.beachMatchPlay.currentHole = 1;
 
-    if(!state.wolf){
-      state.wolf = { currentHole: 1, order: [], holes: {} };
-    }
+    if(!state.wolf) state.wolf = { currentHole: 1, order: [], holes: {} };
     if(!Array.isArray(state.wolf.order)) state.wolf.order = [];
     if(!state.wolf.holes) state.wolf.holes = {};
-    if(!state.wolf.currentHole || state.wolf.currentHole < 1 || state.wolf.currentHole > 18){
-      state.wolf.currentHole = 1;
-    }
+    if(!state.wolf.currentHole || state.wolf.currentHole < 1 || state.wolf.currentHole > 18) state.wolf.currentHole = 1;
 
-    if(!state.bingoBangoBongo){
-      state.bingoBangoBongo = { currentHole: 1, holes: {} };
-    }
+    if(!state.bingoBangoBongo) state.bingoBangoBongo = { currentHole: 1, holes: {} };
     if(!state.bingoBangoBongo.holes) state.bingoBangoBongo.holes = {};
-    if(!state.bingoBangoBongo.currentHole || state.bingoBangoBongo.currentHole < 1 || state.bingoBangoBongo.currentHole > 18){
-      state.bingoBangoBongo.currentHole = 1;
-    }
+    if(!state.bingoBangoBongo.currentHole || state.bingoBangoBongo.currentHole < 1 || state.bingoBangoBongo.currentHole > 18) state.bingoBangoBongo.currentHole = 1;
 
-    if(!state.strokes){
-      state.strokes = { currentHole: 1, holes: {} };
-    }
+    if(!state.strokes) state.strokes = { currentHole: 1, holes: {} };
     if(!state.strokes.holes) state.strokes.holes = {};
-    if(!state.strokes.currentHole || state.strokes.currentHole < 1 || state.strokes.currentHole > 18){
-      state.strokes.currentHole = 1;
-    }
+    if(!state.strokes.currentHole || state.strokes.currentHole < 1 || state.strokes.currentHole > 18) state.strokes.currentHole = 1;
   }
 
   async function loadState(){
@@ -830,26 +850,17 @@
   }
 
   function $(id){ return document.getElementById(id); }
-
   function option(value, text){
     const o = document.createElement('option');
     o.value = value;
     o.textContent = text;
     return o;
   }
-
-  function currentGame(){
-    return state.home.game;
-  }
-
-  function selectedPlayers(){
-    return state.home.selectedPlayers || [];
-  }
-
-  function currentCourse(){
-    return state.home.course || 'the_woods';
-  }
-
+  function currentGame(){ return state.home.game; }
+  function selectedPlayers(){ return state.home.selectedPlayers || []; }
+  function currentCourse(){ return state.home.course || 'the_woods'; }
+  function currentCourseData(){ return COURSES[currentCourse()] || COURSES.the_woods; }
+  function parForHole(hole){ return currentCourseData().pars[hole - 1] || 4; }
   function formatMoney(n){
     const sign = n > 0 ? "+" : "";
     return `${sign}$${n}`;
@@ -872,7 +883,6 @@
   function show(sectionId){
     const allowed = isAdmin ? ['home','placeholder','setup','entry','board'] : ['board','placeholder'];
     ['home','placeholder','setup','entry','board'].forEach(id => $(id).classList.add('hidden'));
-
     const target = allowed.includes(sectionId) ? sectionId : 'board';
     $(target).classList.remove('hidden');
 
@@ -907,11 +917,8 @@
     loginBtn.textContent = isAdmin ? 'Unlocked' : 'Unlock';
     loginBtn.disabled = isAdmin;
     input.disabled = isAdmin;
-    if(isAdmin){
-      msg.textContent = 'Admin unlocked';
-    } else if(!msg.textContent){
-      msg.textContent = 'View-only mode';
-    }
+    if(isAdmin) msg.textContent = 'Admin unlocked';
+    else if(!msg.textContent) msg.textContent = 'View-only mode';
     updateAdminVisibility();
   }
 
@@ -1000,9 +1007,7 @@
     state.home.selectedPlayers = checked;
 
     const wolfInvalid = !state.wolf.order.length || state.wolf.order.some(p => !checked.includes(p)) || state.wolf.order.length !== checked.length;
-    if(wolfInvalid){
-      state.wolf.order = [...checked];
-    }
+    if(wolfInvalid) state.wolf.order = [...checked];
 
     saveState();
     $('homeMsg').textContent = 'Saved.';
@@ -1035,13 +1040,8 @@
     return c;
   }
 
-  function beachMatchComplete(matchId){
-    return beachHolesSavedCount(matchId) === 9;
-  }
-
-  function beachCanAccessMatch(matchId){
-    return matchId === 1 ? true : beachMatchComplete(matchId - 1);
-  }
+  function beachMatchComplete(matchId){ return beachHolesSavedCount(matchId) === 9; }
+  function beachCanAccessMatch(matchId){ return matchId === 1 ? true : beachMatchComplete(matchId - 1); }
 
   function beachFillPlayerSelect(sel){
     sel.innerHTML = '';
@@ -1071,7 +1071,7 @@
 
   function beachSaveTeams(){
     const m = beachCurrentMatch();
-    if(!beachCanAccessMatch(m)){ return 'Locked until previous match is complete.'; }
+    if(!beachCanAccessMatch(m)) return 'Locked until previous match is complete.';
 
     const team1 = [$('bmp_t1p1').value, $('bmp_t1p2').value];
     const team2 = [$('bmp_t2p1').value, $('bmp_t2p2').value];
@@ -1114,7 +1114,6 @@
       if(!Number.isFinite(n) || n<1 || n>15) throw new Error('Scores must be 1–15.');
       scores[p] = n;
     }
-
     return {holeIndex, scores};
   }
 
@@ -1122,9 +1121,7 @@
     const m = beachCurrentMatch();
     const {holeIndex, scores} = beachCollectScores();
     const key = `h${holeIndex}`;
-    const prev = beachState().matches[m].holes[key]
-      ? JSON.parse(JSON.stringify(beachState().matches[m].holes[key]))
-      : null;
+    const prev = beachState().matches[m].holes[key] ? JSON.parse(JSON.stringify(beachState().matches[m].holes[key])) : null;
 
     lastAction = { game: 'beach_match_play', match: m, key, prev };
     beachState().matches[m].holes[key] = {scores, updatedAt: new Date().toISOString()};
@@ -1162,7 +1159,6 @@
       else if(t2 < t1){ team2Pts += 1; win = '2'; }
       holes.push({h, status:win, t1, t2});
     }
-
     return {team1Pts, team2Pts, holes, setup};
   }
 
@@ -1188,7 +1184,6 @@
       const mp = beachComputeMatchPoints(m);
       if(!mp || !beachMatchComplete(m)) continue;
       const {setup, team1Pts, team2Pts} = mp;
-
       if(team1Pts > team2Pts){
         totals[setup.team1[0]].money += MONEY_PER_PLAYER_PER_MATCH;
         totals[setup.team1[1]].money += MONEY_PER_PLAYER_PER_MATCH;
@@ -1201,7 +1196,6 @@
         totals[setup.team1[1]].money -= MONEY_PER_PLAYER_PER_MATCH;
       }
     }
-
     return totals;
   }
 
@@ -1348,14 +1342,14 @@
     } else {
       const key = `h${holeIndex}`;
       const existing = (beachState().matches[m].holes[key] && beachState().matches[m].holes[key].scores)
-        ? beachState().matches[m].holes[key].scores
-        : {};
+        ? beachState().matches[m].holes[key].scores : {};
 
       [...setup.team1, ...setup.team2].forEach(name=>{
         const row = document.createElement('div');
         row.className = 'player-input';
 
         const span = document.createElement('span');
+        span.className = 'player-name';
         span.textContent = name;
 
         const sel = document.createElement('select');
@@ -1410,7 +1404,6 @@
 
   function renderBeachBoard(){
     $('boardTitle').textContent = 'Beach Match Play Scoreboard';
-
     const wrap = $('boardContent');
     wrap.innerHTML = '';
 
@@ -1528,7 +1521,6 @@
         tbl.appendChild(tbody);
         card.appendChild(tbl);
       }
-
       wrap.appendChild(card);
     }
   }
@@ -1549,17 +1541,13 @@
     if(order.some(x=>!x)) return 'Choose a player for every position.';
     const set = new Set(order);
     if(set.size !== order.length) return 'Each player can appear only once in the order.';
-    for(const p of order){
-      if(!selectedPlayers().includes(p)) return 'Order can only use selected players.';
-    }
+    for(const p of order) if(!selectedPlayers().includes(p)) return 'Order can only use selected players.';
     return null;
   }
 
   function wolfSaveOrder(){
     const order = [];
-    for(let i=0;i<selectedPlayers().length;i++){
-      order.push($(`wolf_order_${i}`).value);
-    }
+    for(let i=0;i<selectedPlayers().length;i++) order.push($(`wolf_order_${i}`).value);
     const err = wolfValidateOrder(order);
     if(err) return err;
     wolfState().order = order;
@@ -1617,13 +1605,10 @@
   function wolfComputeTotals(){
     const totals = {};
     selectedPlayers().forEach(p => totals[p] = 0);
-
     for(let h=1; h<=18; h++){
       const entry = wolfState().holes[wolfHoleKey(h)];
       if(!entry || !entry.scores) continue;
-      for(const p of selectedPlayers()){
-        totals[p] += Number(entry.scores[p] || 0);
-      }
+      for(const p of selectedPlayers()) totals[p] += Number(entry.scores[p] || 0);
     }
     return totals;
   }
@@ -1767,9 +1752,7 @@
     title.innerHTML = `<strong>Hole ${hole}</strong> — Wolf: <strong>${wolf}</strong>`;
     wrap.appendChild(title);
 
-    const existing = (wolfState().holes[wolfHoleKey(hole)] && wolfState().holes[wolfHoleKey(hole)].scores)
-      ? wolfState().holes[wolfHoleKey(hole)].scores
-      : {};
+    const existing = (wolfState().holes[wolfHoleKey(hole)] && wolfState().holes[wolfHoleKey(hole)].scores) ? wolfState().holes[wolfHoleKey(hole)].scores : {};
 
     const inputs = document.createElement('div');
     selectedPlayers().forEach(name=>{
@@ -1777,6 +1760,7 @@
       row.className = 'player-input';
 
       const span = document.createElement('span');
+      span.className = 'player-name';
       span.textContent = name;
 
       const sel = document.createElement('select');
@@ -1830,13 +1814,11 @@
 
   function renderWolfBoard(){
     $('boardTitle').textContent = 'Wolf Scoreboard';
-
     const wrap = $('boardContent');
     wrap.innerHTML = '';
 
     const totals = wolfComputeTotals();
-    const rows = Object.entries(totals)
-      .sort((a,b)=> b[1] - a[1] || a[0].localeCompare(b[0]));
+    const rows = Object.entries(totals).sort((a,b)=> b[1] - a[1] || a[0].localeCompare(b[0]));
 
     const leaderboard = document.createElement('div');
     leaderboard.className = 'leaderboard-card';
@@ -1861,12 +1843,7 @@
     const tbody = document.createElement('tbody');
     rows.forEach(([name,points], idx)=>{
       const tr = document.createElement('tr');
-      const tdR = document.createElement('td'); tdR.textContent = String(idx+1);
-      const tdN = document.createElement('td'); tdN.textContent = name; tdN.style.textAlign='left';
-      const tdP = document.createElement('td'); tdP.textContent = String(points);
-      tr.appendChild(tdR);
-      tr.appendChild(tdN);
-      tr.appendChild(tdP);
+      tr.innerHTML = `<td>${idx+1}</td><td style="text-align:left">${name}</td><td>${points}</td>`;
       tbody.appendChild(tr);
     });
     table.appendChild(tbody);
@@ -1893,20 +1870,14 @@
     const holeBody = document.createElement('tbody');
     for(let h=1; h<=18; h++){
       const tr = document.createElement('tr');
-      const tdH = document.createElement('td'); tdH.textContent = String(h);
-      const tdW = document.createElement('td'); tdW.textContent = wolfGetWolfForHole(h);
-      tr.appendChild(tdH);
-      tr.appendChild(tdW);
+      tr.appendChild(Object.assign(document.createElement('td'), {textContent: String(h)}));
+      tr.appendChild(Object.assign(document.createElement('td'), {textContent: wolfGetWolfForHole(h)}));
 
       const entry = wolfState().holes[wolfHoleKey(h)];
       const scores = entry && entry.scores ? entry.scores : {};
-
       selectedPlayers().forEach(p=>{
-        const td = document.createElement('td');
-        td.textContent = scores[p] != null ? String(scores[p]) : '-';
-        tr.appendChild(td);
+        tr.appendChild(Object.assign(document.createElement('td'), {textContent: scores[p] != null ? String(scores[p]) : '-'}));
       });
-
       holeBody.appendChild(tr);
     }
     holeTable.appendChild(holeBody);
@@ -1931,7 +1902,6 @@
   function bbbCollectHoleScores(){
     const hole = Number($('bbb_hole').value);
     const scores = {};
-
     for(const p of selectedPlayers()){
       const sel = $(`bbb_score_${p}`);
       const val = sel.value;
@@ -1940,7 +1910,6 @@
       if(![0,1,2,3].includes(n)) throw new Error('Bingo Bango Bongo points must be 0, 1, 2, or 3.');
       scores[p] = n;
     }
-
     return { hole, scores };
   }
 
@@ -1968,15 +1937,11 @@
   function bbbComputeTotals(){
     const totals = {};
     selectedPlayers().forEach(p => totals[p] = 0);
-
     for(let h=1; h<=18; h++){
       const entry = bbbState().holes[bbbHoleKey(h)];
       if(!entry || !entry.scores) continue;
-      for(const p of selectedPlayers()){
-        totals[p] += Number(entry.scores[p] || 0);
-      }
+      for(const p of selectedPlayers()) totals[p] += Number(entry.scores[p] || 0);
     }
-
     return totals;
   }
 
@@ -2048,9 +2013,7 @@
     title.innerHTML = `<strong>Hole ${hole}</strong>`;
     wrap.appendChild(title);
 
-    const existing = (bbbState().holes[bbbHoleKey(hole)] && bbbState().holes[bbbHoleKey(hole)].scores)
-      ? bbbState().holes[bbbHoleKey(hole)].scores
-      : {};
+    const existing = (bbbState().holes[bbbHoleKey(hole)] && bbbState().holes[bbbHoleKey(hole)].scores) ? bbbState().holes[bbbHoleKey(hole)].scores : {};
 
     const inputs = document.createElement('div');
     selectedPlayers().forEach(name=>{
@@ -2058,6 +2021,7 @@
       row.className = 'player-input';
 
       const span = document.createElement('span');
+      span.className = 'player-name';
       span.textContent = name;
 
       const sel = document.createElement('select');
@@ -2111,13 +2075,11 @@
 
   function renderBBBBoard(){
     $('boardTitle').textContent = 'Bingo Bango Bongo Scoreboard';
-
     const wrap = $('boardContent');
     wrap.innerHTML = '';
 
     const totals = bbbComputeTotals();
-    const rows = Object.entries(totals)
-      .sort((a,b)=> b[1] - a[1] || a[0].localeCompare(b[0]));
+    const rows = Object.entries(totals).sort((a,b)=> b[1] - a[1] || a[0].localeCompare(b[0]));
 
     const leaderboard = document.createElement('div');
     leaderboard.className = 'leaderboard-card';
@@ -2142,12 +2104,7 @@
     const tbody = document.createElement('tbody');
     rows.forEach(([name,points], idx)=>{
       const tr = document.createElement('tr');
-      const tdR = document.createElement('td'); tdR.textContent = String(idx+1);
-      const tdN = document.createElement('td'); tdN.textContent = name; tdN.style.textAlign='left';
-      const tdP = document.createElement('td'); tdP.textContent = String(points);
-      tr.appendChild(tdR);
-      tr.appendChild(tdN);
-      tr.appendChild(tdP);
+      tr.innerHTML = `<td>${idx+1}</td><td style="text-align:left">${name}</td><td>${points}</td>`;
       tbody.appendChild(tr);
     });
     table.appendChild(tbody);
@@ -2174,19 +2131,14 @@
     const holeBody = document.createElement('tbody');
     for(let h=1; h<=18; h++){
       const tr = document.createElement('tr');
-      const tdH = document.createElement('td');
-      tdH.textContent = String(h);
-      tr.appendChild(tdH);
+      tr.appendChild(Object.assign(document.createElement('td'), {textContent: String(h)}));
 
       const entry = bbbState().holes[bbbHoleKey(h)];
       const scores = entry && entry.scores ? entry.scores : {};
 
       selectedPlayers().forEach(p=>{
-        const td = document.createElement('td');
-        td.textContent = scores[p] != null ? String(scores[p]) : '-';
-        tr.appendChild(td);
+        tr.appendChild(Object.assign(document.createElement('td'), {textContent: scores[p] != null ? String(scores[p]) : '-'}));
       });
-
       holeBody.appendChild(tr);
     }
     holeTable.appendChild(holeBody);
@@ -2208,19 +2160,80 @@
     if(isAdmin) show('setup');
   }
 
+  function setStepperValue(name, value){
+    const display = $(`strokes_value_${name}`);
+    if(!display) return;
+    const safe = Math.max(1, Math.min(20, Number(value) || 1));
+    display.textContent = String(safe);
+    display.dataset.value = String(safe);
+  }
+
+  function changeStepperValue(name, delta){
+    const display = $(`strokes_value_${name}`);
+    if(!display) return;
+    const current = Number(display.dataset.value || display.textContent || 1);
+    setStepperValue(name, current + delta);
+  }
+
+  function renderStrokeStepper(name, startValue, par){
+    const row = document.createElement('div');
+    row.className = 'player-input';
+
+    const span = document.createElement('span');
+    span.className = 'player-name';
+    span.textContent = name;
+
+    const stepper = document.createElement('div');
+    stepper.className = 'stepper';
+
+    const minus = document.createElement('button');
+    minus.type = 'button';
+    minus.textContent = '-';
+    minus.disabled = !isAdmin;
+    minus.addEventListener('click', ()=> changeStepperValue(name, -1));
+
+    const valueWrap = document.createElement('div');
+    valueWrap.className = 'stepper-value-wrap';
+
+    const value = document.createElement('span');
+    value.className = 'stepper-value';
+    value.id = `strokes_value_${name}`;
+    value.dataset.value = String(startValue);
+    value.textContent = String(startValue);
+
+    const parText = document.createElement('span');
+    parText.className = 'stepper-par';
+    parText.textContent = `Par ${par}`;
+
+    valueWrap.appendChild(value);
+    valueWrap.appendChild(parText);
+
+    const plus = document.createElement('button');
+    plus.type = 'button';
+    plus.textContent = '+';
+    plus.disabled = !isAdmin;
+    plus.addEventListener('click', ()=> changeStepperValue(name, 1));
+
+    stepper.appendChild(minus);
+    stepper.appendChild(valueWrap);
+    stepper.appendChild(plus);
+
+    row.appendChild(span);
+    row.appendChild(stepper);
+    return row;
+  }
+
   function strokesCollectHoleScores(){
     const hole = Number($('strokes_hole').value);
     const scores = {};
 
     for(const p of selectedPlayers()){
-      const sel = $(`strokes_score_${p}`);
-      const val = sel.value;
-      if(val === '') throw new Error('Choose a stroke value for every player.');
-      const n = Number(val);
+      const display = $(`strokes_value_${p}`);
+      if(!display) throw new Error('Score entry is not ready.');
+      const n = Number(display.dataset.value || display.textContent);
       if(!Number.isFinite(n) || n < 1 || n > 20) throw new Error('Strokes must be 1–20.');
       scores[p] = n;
     }
-
     return { hole, scores };
   }
 
@@ -2252,11 +2265,8 @@
     for(let h=1; h<=18; h++){
       const entry = strokesState().holes[strokesHoleKey(h)];
       if(!entry || !entry.scores) continue;
-      for(const p of selectedPlayers()){
-        totals[p] += Number(entry.scores[p] || 0);
-      }
+      for(const p of selectedPlayers()) totals[p] += Number(entry.scores[p] || 0);
     }
-
     return totals;
   }
 
@@ -2275,8 +2285,14 @@
     const courseBox = document.createElement('div');
     courseBox.className = 'subtle';
     courseBox.style.marginTop = '10px';
-    courseBox.innerHTML = `<strong>Course:</strong> ${COURSE_OPTIONS[currentCourse()] || 'The Woods'}`;
+    courseBox.innerHTML = `<strong>Course:</strong> ${currentCourseData().name}`;
     wrap.appendChild(courseBox);
+
+    const parsBox = document.createElement('div');
+    parsBox.className = 'subtle';
+    parsBox.style.marginTop = '10px';
+    parsBox.innerHTML = `<strong>Pars:</strong> ${currentCourseData().pars.map((p,i)=>`${i+1}:${p}`).join(' | ')}`;
+    wrap.appendChild(parsBox);
 
     const playerBox = document.createElement('div');
     playerBox.className = 'subtle';
@@ -2299,7 +2315,7 @@
 
   function renderStrokesEntry(){
     $('entryTitle').textContent = 'Strokes Score Entry';
-    $('entrySubtitle').textContent = 'Enter strokes for each player on the hole.';
+    $('entrySubtitle').textContent = 'Use the large + and - buttons to enter strokes.';
 
     const wrap = $('entryContent');
     wrap.innerHTML = '';
@@ -2322,40 +2338,26 @@
     $('strokes_hole').disabled = !isAdmin;
 
     const hole = Number($('strokes_hole').value || 1);
+    const par = parForHole(hole);
 
     const chip = document.createElement('div');
     chip.className = 'active-hole-chip';
-    chip.textContent = `Active Hole ${hole}`;
+    chip.textContent = `Active Hole ${hole} • Par ${par}`;
     wrap.appendChild(chip);
 
     const title = document.createElement('div');
     title.className = 'subtle';
     title.style.margin = '8px 0';
-    title.innerHTML = `<strong>Hole ${hole}</strong> — Course: <strong>${COURSE_OPTIONS[currentCourse()] || 'The Woods'}</strong>`;
+    title.innerHTML = `<strong>Hole ${hole}</strong> — Course: <strong>${currentCourseData().name}</strong> — Par <strong>${par}</strong>`;
     wrap.appendChild(title);
 
     const existing = (strokesState().holes[strokesHoleKey(hole)] && strokesState().holes[strokesHoleKey(hole)].scores)
-      ? strokesState().holes[strokesHoleKey(hole)].scores
-      : {};
+      ? strokesState().holes[strokesHoleKey(hole)].scores : {};
 
     const inputs = document.createElement('div');
     selectedPlayers().forEach(name=>{
-      const row = document.createElement('div');
-      row.className = 'player-input';
-
-      const span = document.createElement('span');
-      span.textContent = name;
-
-      const sel = document.createElement('select');
-      sel.id = `strokes_score_${name}`;
-      sel.appendChild(option('', ''));
-      for(let v=1; v<=20; v++) sel.appendChild(option(String(v), String(v)));
-      if(existing[name] != null) sel.value = String(existing[name]);
-      sel.disabled = !isAdmin;
-
-      row.appendChild(span);
-      row.appendChild(sel);
-      inputs.appendChild(row);
+      const startValue = existing[name] != null ? Number(existing[name]) : par;
+      inputs.appendChild(renderStrokeStepper(name, startValue, par));
     });
     wrap.appendChild(inputs);
 
@@ -2392,19 +2394,23 @@
     const tip = document.createElement('div');
     tip.className = 'small muted';
     tip.style.marginTop = '6px';
-    tip.textContent = 'Enter strokes for every player. After you click Save Hole, the app automatically advances to the next hole.';
+    tip.textContent = 'Each player starts at par for the current hole. Use + or - to adjust, then save the hole.';
     wrap.appendChild(tip);
   }
 
   function renderStrokesBoard(){
     $('boardTitle').textContent = 'Strokes Scoreboard';
-
     const wrap = $('boardContent');
     wrap.innerHTML = '';
 
+    const courseInfo = document.createElement('div');
+    courseInfo.className = 'notice';
+    courseInfo.style.marginBottom = '12px';
+    courseInfo.innerHTML = `<strong>Course:</strong> ${currentCourseData().name}`;
+    wrap.appendChild(courseInfo);
+
     const totals = strokesComputeTotals();
-    const rows = Object.entries(totals)
-      .sort((a,b)=> a[1] - b[1] || a[0].localeCompare(b[0]));
+    const rows = Object.entries(totals).sort((a,b)=> a[1] - b[1] || a[0].localeCompare(b[0]));
 
     const leaderboard = document.createElement('div');
     leaderboard.className = 'leaderboard-card';
@@ -2429,12 +2435,7 @@
     const tbody = document.createElement('tbody');
     rows.forEach(([name,total], idx)=>{
       const tr = document.createElement('tr');
-      const tdR = document.createElement('td'); tdR.textContent = String(idx+1);
-      const tdN = document.createElement('td'); tdN.textContent = name; tdN.style.textAlign='left';
-      const tdP = document.createElement('td'); tdP.textContent = String(total);
-      tr.appendChild(tdR);
-      tr.appendChild(tdN);
-      tr.appendChild(tdP);
+      tr.innerHTML = `<td>${idx+1}</td><td style="text-align:left">${name}</td><td>${total}</td>`;
       tbody.appendChild(tr);
     });
     table.appendChild(tbody);
@@ -2450,7 +2451,7 @@
     const holeTable = document.createElement('table');
     const holeHead = document.createElement('thead');
     const holeHr = document.createElement('tr');
-    ['Hole', ...selectedPlayers()].forEach(t=>{
+    ['Hole','Par', ...selectedPlayers()].forEach(t=>{
       const th=document.createElement('th');
       th.textContent=t;
       holeHr.appendChild(th);
@@ -2461,19 +2462,15 @@
     const holeBody = document.createElement('tbody');
     for(let h=1; h<=18; h++){
       const tr = document.createElement('tr');
-      const tdH = document.createElement('td');
-      tdH.textContent = String(h);
-      tr.appendChild(tdH);
+      tr.appendChild(Object.assign(document.createElement('td'), {textContent: String(h)}));
+      tr.appendChild(Object.assign(document.createElement('td'), {textContent: String(parForHole(h))}));
 
       const entry = strokesState().holes[strokesHoleKey(h)];
       const scores = entry && entry.scores ? entry.scores : {};
 
       selectedPlayers().forEach(p=>{
-        const td = document.createElement('td');
-        td.textContent = scores[p] != null ? String(scores[p]) : '-';
-        tr.appendChild(td);
+        tr.appendChild(Object.assign(document.createElement('td'), {textContent: scores[p] != null ? String(scores[p]) : '-'}));
       });
-
       holeBody.appendChild(tr);
     }
     holeTable.appendChild(holeBody);
